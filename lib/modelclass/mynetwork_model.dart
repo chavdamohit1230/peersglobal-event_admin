@@ -4,6 +4,7 @@ class Mynetwork{
 
   final String username;
   final String? id;
+  final String? role;
   final String Designnation;
   final String ImageUrl;
   final String? organization;
@@ -25,6 +26,7 @@ class Mynetwork{
     required this.Designnation,
     required this.ImageUrl,
     this.id,
+    this.role,
      this.reject,
     this.accept,
     this.aboutme,

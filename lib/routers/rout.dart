@@ -25,14 +25,15 @@ class AppRout{
       GoRoute(path: '/admin_home'
         ,builder: (context, state) => AdminHomeScreen(),),
 
-      GoRoute(path: '/manageexhibiter'
-        ,builder: (context, state) => Manageexhibiter(),),
+      GoRoute(path: '/manageuser'
+        ,builder: (context, state) => Manageuser(),),
 
-      GoRoute(path: '/manageuser',
-      builder:(context, state) =>Manageuser(),),
+      GoRoute(path: '/managesponsor',
+        builder: (context, state) => Managesponsor(),),
 
-        GoRoute(path: '/managesponsor',
-        builder:(context, state) => Managesponsor(),)
+        GoRoute(path: '/manageexhibiter',
+        builder: (context, state) => Manageexhibiter()),
+
 
 
     ]);
