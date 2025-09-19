@@ -83,7 +83,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Exhibiter Section"),
-        backgroundColor: const Color(0xFFC5D9EC),
+        backgroundColor: const Color(0xFFF3F8FE),
         foregroundColor: Colors.black87,
         elevation: 0,
       ),
@@ -159,7 +159,6 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
     );
   }
 }
-
 class ExhibiterDetailView extends StatelessWidget {
   final Mynetwork exhibiter;
   final VoidCallback onRemove;
@@ -172,123 +171,193 @@ class ExhibiterDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3F8FE),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(exhibiter.username,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF3F8FE),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 1,
+          iconTheme: const IconThemeData(color: Colors.black87),
+          title: Text(
+            exhibiter.username,
             style: const TextStyle(
-                color: Colors.black87, fontWeight: FontWeight.w600)),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          bottom: const TabBar(
+            labelColor: Colors.blue,
+            unselectedLabelColor: Colors.black54,
+            indicatorColor: Colors.blue,
+            tabs: [
+              Tab(text: "Details", icon: Icon(Icons.info_outline)),
+              Tab(text: "Posts", icon: Icon(Icons.post_add)),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            Container(
-              width: double.infinity,
-              padding:
-              const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius:
-                BorderRadius.vertical(bottom: Radius.circular(30)),
-              ),
+            // --- Existing details view as it is ---
+            SingleChildScrollView(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.white,
-                    backgroundImage: NetworkImage(exhibiter.ImageUrl),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 40, horizontal: 16),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(30)),
+                    ),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white,
+                          backgroundImage: NetworkImage(exhibiter.ImageUrl),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          exhibiter.username,
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          exhibiter.Designnation,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                              fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(exhibiter.username,
-                      style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87)),
-                  const SizedBox(height: 6),
-                  Text(exhibiter.Designnation,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black54,
-                          fontStyle: FontStyle.italic)),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildInfoRow(Icons.person, "Name", exhibiter.username),
+                        const Divider(),
+                        _buildInfoRow(Icons.work_outline, "Designation",
+                            exhibiter.Designnation),
+                        const Divider(),
+                        _buildInfoRow(Icons.phone, "Mobile",
+                            exhibiter.mobile ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.email_outlined, "Email",
+                            exhibiter.email ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.language, "CompanyUrl",
+                            exhibiter.companywebsite ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.location_history, "BusinessLocation",
+                            exhibiter.businessLocation ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.business_sharp, "Industry",
+                            exhibiter.industry ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.map, "Country",
+                            exhibiter.contry ?? "N/A"),
+                        const Divider(),
+                        _buildInfoRow(Icons.location_city_sharp, "City",
+                            exhibiter.city ?? "N/A"),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: 200,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        onRemove();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text(
+                        "Remove Exhibiter",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4))
-                ],
-              ),
+
+            // --- New Posts Section ---
+            Center(
               child: Column(
-                children: [
-                  _buildInfoRow(Icons.person, "Name", exhibiter.username),
-                  const Divider(),
-                  _buildInfoRow(
-                      Icons.work_outline, "Designation", exhibiter.Designnation),
-                  const Divider(),
-                  _buildInfoRow(Icons.phone, "Mobile", exhibiter.mobile ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.email_outlined, "Email", exhibiter.email ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.language, "CompanyUrl",
-                      exhibiter.companywebsite ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.location_history, "BusinessLocation",
-                      exhibiter.businessLocation ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.business_sharp, "Industry",
-                      exhibiter.industry ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.map, "Country", exhibiter.contry ?? "N/A"),
-                  const Divider(),
-                  _buildInfoRow(Icons.location_city_sharp, "City",
-                      exhibiter.city ?? "N/A"),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.post_add, size: 60, color: Colors.blueGrey),
+                  SizedBox(height: 16),
+                  Text(
+                    "Posts Section (Coming Soon)",
+                    style: TextStyle(fontSize: 18, color: Colors.black87),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: 200,
-              child: ElevatedButton(
-                onPressed: () {
-                  onRemove();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text(
-                  "Remove Exhibiter",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildInfoRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, color: Colors.blueGrey, size: 22),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 120,
+          child: Text(
+            "$title:",
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 15, color: Colors.black87),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
 
   Widget _buildInfoRow(IconData icon, String title, String value) {
     return Padding(
@@ -307,7 +376,6 @@ class ExhibiterDetailView extends StatelessWidget {
       ]),
     );
   }
-}
 
 class AddExhibiterForm extends StatefulWidget {
   final Function(Mynetwork) onAddExhibitor;
