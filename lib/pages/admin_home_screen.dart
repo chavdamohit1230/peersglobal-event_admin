@@ -79,7 +79,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 _buildDashboardCard("Manage Sponsors", Icons.handshake, Colors.green, () {
                   context.push('/managesponsor');
                 }),
-                _buildDashboardCard("Speakers & Sessions", Icons.mic, Colors.deepOrange, () {
+                _buildDashboardCard("Speakers ", Icons.mic, Colors.deepOrange, () {
                   context.push('/speakers');
                 }),
                 _buildDashboardCard("Event Timeline", Icons.timeline, Colors.teal, () {
@@ -92,7 +92,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   context.push('/ticketing');
                 }),
                 _buildDashboardCard("Venue & Maps", Icons.map, Colors.cyan, () {
-                  context.push('/venue');
+                  context.push('/managefloorplan');
                 }),
                 _buildDashboardCard("Analytics & Reports", Icons.bar_chart, Colors.indigo, () {
                   context.push('/analytics');

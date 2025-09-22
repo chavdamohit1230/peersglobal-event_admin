@@ -4,6 +4,7 @@ import 'package:peersglobaladmin/pages/admin_splashscreen.dart';
 import 'package:peersglobaladmin/pages/adminlogin.dart';
 import 'package:peersglobaladmin/pages/forgetpasswordscreen.dart';
 import 'package:peersglobaladmin/pages/manageexhibiter.dart';
+import 'package:peersglobaladmin/pages/managefloorplan.dart';
 import 'package:peersglobaladmin/pages/managesponsor.dart';
 import 'package:peersglobaladmin/pages/manageuser.dart';
 
@@ -33,6 +34,11 @@ class AppRout{
 
         GoRoute(path: '/manageexhibiter',
         builder: (context, state) => Manageexhibiter()),
+
+      GoRoute(path: '/managefloorplan',
+          builder: (context, state) =>ManageFloorPlan()),
+
+
 
 
 

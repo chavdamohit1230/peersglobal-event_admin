@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:peersglobaladmin/colors/colorfile.dart';
 import 'package:peersglobaladmin/modelclass/mynetwork_model.dart';
+import 'package:excel/excel.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Manageexhibiter extends StatefulWidget {
   const Manageexhibiter({super.key});
@@ -13,11 +16,19 @@ class Manageexhibiter extends StatefulWidget {
 class _ManageexhibiterState extends State<Manageexhibiter> {
   bool isLoading = true;
   List<Mynetwork> exhibitors = [];
+  List<Mynetwork> filteredExhibitors = [];
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchExhibitorsFromFirebase();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchExhibitorsFromFirebase() async {
@@ -48,6 +59,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
 
       setState(() {
         exhibitors = fetchedExhibitors;
+        filteredExhibitors = fetchedExhibitors; // initial full list
         isLoading = false;
       });
     } catch (e) {
@@ -65,6 +77,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
 
       setState(() {
         exhibitors.removeWhere((e) => e.id == exhibitorId);
+        filteredExhibitors.removeWhere((e) => e.id == exhibitorId);
       });
     } catch (e) {
       print("Error removing exhibitor: $e");
@@ -74,8 +87,29 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
   void addExhibitorToList(Mynetwork exhibitor) {
     setState(() {
       exhibitors.add(exhibitor);
+      filteredExhibitors.add(exhibitor);
     });
   }
+
+  void filterSearch(String query) {
+    if (query.isEmpty) {
+      setState(() => filteredExhibitors = exhibitors);
+      return;
+    }
+
+    final search = query.toLowerCase();
+    final results = exhibitors.where((ex) {
+      final name = ex.username.toLowerCase();
+      final email = ex.email?.toLowerCase() ?? "";
+      final designation = ex.Designnation.toLowerCase();
+      return name.contains(search) || email.contains(search) || designation.contains(search);
+    }).toList();
+
+    setState(() {
+      filteredExhibitors = results;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -86,60 +120,92 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
         backgroundColor: const Color(0xFFF3F8FE),
         foregroundColor: Colors.black87,
         elevation: 0,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : exhibitors.isEmpty
-          ? const Center(child: Text("No exhibitors found"))
-          : ListView.separated(
-        itemCount: exhibitors.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final exhibitor = exhibitors[index];
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-                vertical: 12, horizontal: 16),
-            leading: CircleAvatar(
-              radius: 30,
-              backgroundImage: NetworkImage(exhibitor.ImageUrl),
-            ),
-            title: Text(
-              exhibitor.username,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
-            ),
-            subtitle: Text(
-              exhibitor.Designnation,
-              style: const TextStyle(
-                  fontSize: 14, color: Colors.black54),
-            ),
-            trailing: ElevatedButton(
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ExhibiterDetailView(
-                      exhibiter: exhibitor,
-                      onRemove: () => removeExhibitor(exhibitor.id!),
-                    ),
-                  ),
-                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+              style: TextButton.styleFrom(
+                backgroundColor: Appcolor.green,
+                foregroundColor: Appcolor.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              child: const Text(
-                "View",
-                style: TextStyle(color: Colors.white, fontSize: 14),
+              child: const Text(" Print "),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              controller: searchController,
+              onChanged: filterSearch,
+              decoration: InputDecoration(
+                hintText: "Search exhibitors  ",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: const Color(0xFFF3F8FE),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredExhibitors.isEmpty
+                ? const Center(child: Text("No exhibitors found"))
+                : ListView.separated(
+              itemCount: filteredExhibitors.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final exhibitor = filteredExhibitors[index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  leading: CircleAvatar(
+                    radius: 30,
+                    backgroundImage: NetworkImage(exhibitor.ImageUrl),
+                  ),
+                  title: Text(
+                    exhibitor.username,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                  ),
+                  subtitle: Text(
+                    exhibitor.Designnation,
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                  trailing: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExhibiterDetailView(
+                            exhibiter: exhibitor,
+                            onRemove: () => removeExhibitor(exhibitor.id!),
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text("View", style: TextStyle(color: Colors.white, fontSize: 14)),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Appcolor.secondary,
@@ -147,27 +213,22 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  AddExhibiterForm(onAddExhibitor: addExhibitorToList),
+              builder: (context) => AddExhibiterForm(onAddExhibitor: addExhibitorToList),
             ),
           );
         },
         icon: const Icon(Icons.add, color: Colors.white),
-        label:
-        const Text("Add Exhibiter", style: TextStyle(color: Colors.white)),
+        label: const Text("Add Exhibiter", style: TextStyle(color: Colors.white)),
       ),
     );
   }
 }
+
 class ExhibiterDetailView extends StatelessWidget {
   final Mynetwork exhibiter;
   final VoidCallback onRemove;
 
-  const ExhibiterDetailView({
-    super.key,
-    required this.exhibiter,
-    required this.onRemove,
-  });
+  const ExhibiterDetailView({super.key, required this.exhibiter, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -179,13 +240,7 @@ class ExhibiterDetailView extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 1,
           iconTheme: const IconThemeData(color: Colors.black87),
-          title: Text(
-            exhibiter.username,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          title: Text(exhibiter.username, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
           bottom: const TabBar(
             labelColor: Colors.blue,
             unselectedLabelColor: Colors.black54,
@@ -198,46 +253,23 @@ class ExhibiterDetailView extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // --- Existing details view as it is ---
             SingleChildScrollView(
               child: Column(
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 40, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(30)),
+                      gradient: LinearGradient(colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
                     ),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor: Colors.white,
-                          backgroundImage: NetworkImage(exhibiter.ImageUrl),
-                        ),
+                        CircleAvatar(radius: 60, backgroundColor: Colors.white, backgroundImage: NetworkImage(exhibiter.ImageUrl)),
                         const SizedBox(height: 12),
-                        Text(
-                          exhibiter.username,
-                          style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87),
-                        ),
+                        Text(exhibiter.username, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
                         const SizedBox(height: 6),
-                        Text(
-                          exhibiter.Designnation,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black54,
-                              fontStyle: FontStyle.italic),
-                        ),
+                        Text(exhibiter.Designnation, style: const TextStyle(fontSize: 16, color: Colors.black54, fontStyle: FontStyle.italic)),
                       ],
                     ),
                   ),
@@ -246,44 +278,26 @@ class ExhibiterDetailView extends StatelessWidget {
                     width: double.infinity,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: Offset(0, 4))]),
                     child: Column(
                       children: [
-                        _buildInfoRow(Icons.person, "Name", exhibiter.username),
+                        _detailRow(Icons.person, "Name", exhibiter.username),
                         const Divider(),
-                        _buildInfoRow(Icons.work_outline, "Designation",
-                            exhibiter.Designnation),
+                        _detailRow(Icons.work_outline, "Designation", exhibiter.Designnation),
                         const Divider(),
-                        _buildInfoRow(Icons.phone, "Mobile",
-                            exhibiter.mobile ?? "N/A"),
+                        _detailRow(Icons.phone, "Mobile", exhibiter.mobile ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.email_outlined, "Email",
-                            exhibiter.email ?? "N/A"),
+                        _detailRow(Icons.email_outlined, "Email", exhibiter.email ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.language, "CompanyUrl",
-                            exhibiter.companywebsite ?? "N/A"),
+                        _detailRow(Icons.language, "CompanyUrl", exhibiter.companywebsite ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.location_history, "BusinessLocation",
-                            exhibiter.businessLocation ?? "N/A"),
+                        _detailRow(Icons.location_history, "BusinessLocation", exhibiter.businessLocation ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.business_sharp, "Industry",
-                            exhibiter.industry ?? "N/A"),
+                        _detailRow(Icons.business_sharp, "Industry", exhibiter.industry ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.map, "Country",
-                            exhibiter.contry ?? "N/A"),
+                        _detailRow(Icons.map, "Country", exhibiter.contry ?? "N/A"),
                         const Divider(),
-                        _buildInfoRow(Icons.location_city_sharp, "City",
-                            exhibiter.city ?? "N/A"),
+                        _detailRow(Icons.location_city_sharp, "City", exhibiter.city ?? "N/A"),
                       ],
                     ),
                   ),
@@ -297,33 +311,23 @@ class ExhibiterDetailView extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 14, horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text(
-                        "Remove Exhibiter",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                      child: const Text("Remove Exhibiter", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 30),
                 ],
               ),
             ),
-
-            // --- New Posts Section ---
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
                   Icon(Icons.post_add, size: 60, color: Colors.blueGrey),
                   SizedBox(height: 16),
-                  Text(
-                    "Posts Section (Coming Soon)",
-                    style: TextStyle(fontSize: 18, color: Colors.black87),
-                  ),
+                  Text("Posts Section (Coming Soon)", style: TextStyle(fontSize: 18, color: Colors.black87)),
                 ],
               ),
             ),
@@ -333,53 +337,21 @@ class ExhibiterDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String value) {
+  Widget _detailRow(IconData icon, String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, color: Colors.blueGrey, size: 22),
         const SizedBox(width: 12),
-        SizedBox(
-          width: 120,
-          child: Text(
-            "$title:",
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 15),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 15, color: Colors.black87),
-          ),
-        ),
+        SizedBox(width: 120, child: Text("$title:", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87))),
       ]),
     );
   }
 }
 
-
-  Widget _buildInfoRow(IconData icon, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: Colors.blueGrey, size: 22),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: 120,
-          child:
-          Text("$title:", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        ),
-        Expanded(
-            child: Text(value,
-                style: const TextStyle(fontSize: 15, color: Colors.black87))),
-      ]),
-    );
-  }
-
 class AddExhibiterForm extends StatefulWidget {
   final Function(Mynetwork) onAddExhibitor;
-
   const AddExhibiterForm({super.key, required this.onAddExhibitor});
 
   @override
@@ -393,8 +365,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController organizationController = TextEditingController();
   final TextEditingController websiteController = TextEditingController();
-  final TextEditingController businessLocationController =
-  TextEditingController();
+  final TextEditingController businessLocationController = TextEditingController();
   final TextEditingController aboutMeController = TextEditingController();
   final TextEditingController otherInfoController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
@@ -402,6 +373,23 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController roleController = TextEditingController();
   final TextEditingController brandNameController = TextEditingController();
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    organizationController.dispose();
+    websiteController.dispose();
+    businessLocationController.dispose();
+    aboutMeController.dispose();
+    otherInfoController.dispose();
+    countryController.dispose();
+    countryCodeController.dispose();
+    mobileController.dispose();
+    roleController.dispose();
+    brandNameController.dispose();
+    super.dispose();
+  }
 
   Future<void> saveExhibitor() async {
     final docRef = await FirebaseFirestore.instance.collection('userregister').add({
@@ -417,7 +405,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
       'mobile': mobileController.text.trim(),
       'role': roleController.text.trim(),
       'brandName': brandNameController.text.trim(),
-      'profileImage': 'https://via.placeholder.com/150', // default image
+      'profileImage': 'https://via.placeholder.com/150',
       'designation': roleController.text.trim(),
       'industry': '',
       'city': '',
@@ -441,9 +429,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
 
     widget.onAddExhibitor(newExhibitor);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Exhibiter Added Successfully")),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Exhibiter Added Successfully")));
   }
 
   @override
@@ -460,71 +446,46 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
         padding: const EdgeInsets.all(16.0),
         child: Card(
           elevation: 6,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Exhibiter Information",
-                      style:
-                      TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    buildTextField("Full Name", nameController, Icons.person),
-                    buildTextField("Email", emailController, Icons.email,
-                        keyboardType: TextInputType.emailAddress),
-                    buildTextField(
-                        "Organization", organizationController, Icons.business),
-                    buildTextField(
-                        "Company Website", websiteController, Icons.language),
-                    buildTextField("Business Location",
-                        businessLocationController, Icons.location_on),
-                    buildTextField("About Me", aboutMeController, Icons.info,
-                        maxLines: 3),
-                    buildTextField("Other Info", otherInfoController,
-                        Icons.notes_outlined,
-                        maxLines: 3),
-                    buildTextField(
-                        "Country", countryController, Icons.flag_outlined),
-                    buildTextField("Country Code", countryCodeController,
-                        Icons.phone_android),
-                    buildTextField("Mobile Number", mobileController,
-                        Icons.phone_iphone,
-                        keyboardType: TextInputType.phone),
-                    buildTextField("Role", roleController, Icons.work_outline),
-                    buildTextField("Brand Name", brandNameController,
-                        Icons.shopping_bag_outlined),
-                    const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Appcolor.secondary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            saveExhibitor();
-                          }
-                        },
-                        icon: const Icon(Icons.save),
-                        label: const Text(
-                          "Save Exhibiter",
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text("Exhibiter Information", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  buildTextField("Full Name", nameController, Icons.person),
+                  buildTextField("Email", emailController, Icons.email, keyboardType: TextInputType.emailAddress),
+                  buildTextField("Organization", organizationController, Icons.business),
+                  buildTextField("Company Website", websiteController, Icons.language),
+                  buildTextField("Business Location", businessLocationController, Icons.location_on),
+                  buildTextField("About Me", aboutMeController, Icons.info, maxLines: 3),
+                  buildTextField("Other Info", otherInfoController, Icons.notes_outlined, maxLines: 3),
+                  buildTextField("Country", countryController, Icons.flag_outlined),
+                  buildTextField("Country Code", countryCodeController, Icons.phone_android),
+                  buildTextField("Mobile Number", mobileController, Icons.phone_iphone, keyboardType: TextInputType.phone),
+                  buildTextField("Role", roleController, Icons.work_outline),
+                  buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Appcolor.secondary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                    )
-                  ],
-                ),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          saveExhibitor();
+                        }
+                      },
+                      icon: const Icon(Icons.save),
+                      label: const Text("Save Exhibiter", style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  )
+                ]),
               ),
             ),
           ),
@@ -533,8 +494,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller,
-      IconData icon,
+  Widget buildTextField(String label, TextEditingController controller, IconData icon,
       {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -547,15 +507,9 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           labelText: label,
           filled: true,
           fillColor: const Color(0xFFDCEAF4).withOpacity(0.4),
-          contentPadding:
-          const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.indigo, width: 2),
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.indigo, width: 2)),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
