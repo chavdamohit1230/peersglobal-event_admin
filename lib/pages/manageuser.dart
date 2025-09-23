@@ -49,6 +49,7 @@ class _ManageuserState extends State<Manageuser> {
           contry: data['country'] ?? '',
           city: data['city'] ?? '',
           aboutme: data['aboutme'] ?? '',
+          countrycode: data['countrycode'] ?? '',
         );
       }).toList();
 
@@ -118,10 +119,10 @@ class _ManageuserState extends State<Manageuser> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Appcolor.backgroundLight,
       appBar: AppBar(
         title: const Text("Manage Users"),
-        backgroundColor: const Color(0xFFF3F8FE),
+        backgroundColor: Appcolor.backgroundDark,
         foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
@@ -144,7 +145,6 @@ class _ManageuserState extends State<Manageuser> {
       ),
       body: Column(
         children: [
-          // Search bar
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -313,6 +313,8 @@ class UserDetailView extends StatelessWidget {
                   const Divider(),
                   _buildInfoRow(Icons.work_outline, "Designation", user.Designnation),
                   const Divider(),
+                  _buildInfoRow(Icons.flag, "Country Code", user.countrycode ?? "N/A"),
+                  const Divider(),
                   _buildInfoRow(Icons.phone, "Mobile", user.mobile ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.email_outlined, "Email", user.email ?? "N/A"),
@@ -377,7 +379,6 @@ class UserDetailView extends StatelessWidget {
   }
 }
 
-// -------------------- Add User Form --------------------
 
 class AddUserForm extends StatefulWidget {
   final Function(Mynetwork) onAddUser;
@@ -394,6 +395,12 @@ class _AddUserFormState extends State<AddUserForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController designationController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
+  final TextEditingController companyWebSiteController = TextEditingController();
+  final TextEditingController businessLocationController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController countryCodeController = TextEditingController();
+  final TextEditingController aboutController = TextEditingController();
 
   @override
   void dispose() {
@@ -401,6 +408,12 @@ class _AddUserFormState extends State<AddUserForm> {
     emailController.dispose();
     designationController.dispose();
     mobileController.dispose();
+    companyWebSiteController.dispose();
+    businessLocationController.dispose();
+    countryController.dispose();
+    cityController.dispose();
+    countryCodeController.dispose();
+    aboutController.dispose();
     super.dispose();
   }
 
@@ -411,6 +424,12 @@ class _AddUserFormState extends State<AddUserForm> {
       'email': emailController.text.trim(),
       'designation': designationController.text.trim(),
       'mobile': mobileController.text.trim(),
+      'companywebsite': companyWebSiteController.text.trim(),
+      'businessLocation': businessLocationController.text.trim(),
+      'country': countryController.text.trim(),
+      'city': cityController.text.trim(),
+      'countrycode': countryCodeController.text.trim(),
+      'aboutme': aboutController.text.trim(),
       'profileImage': 'https://via.placeholder.com/150',
     });
 
@@ -421,6 +440,12 @@ class _AddUserFormState extends State<AddUserForm> {
       ImageUrl: 'https://via.placeholder.com/150',
       email: emailController.text.trim(),
       mobile: mobileController.text.trim(),
+      companywebsite: companyWebSiteController.text.trim(),
+      businessLocation: businessLocationController.text.trim(),
+      contry: countryController.text.trim(),
+      city: cityController.text.trim(),
+      countrycode: countryCodeController.text.trim(),
+      aboutme: aboutController.text.trim(),
     );
 
     widget.onAddUser(newUser);
@@ -464,6 +489,13 @@ class _AddUserFormState extends State<AddUserForm> {
                           Icons.work_outline),
                       buildTextField("Mobile Number", mobileController,
                           Icons.phone, keyboardType: TextInputType.phone),
+                      buildTextField("Company Website", companyWebSiteController, Icons.language,
+                          keyboardType: TextInputType.url),
+                      buildTextField("Business Location", businessLocationController, Icons.location_on),
+                      buildTextField("Country", countryController, Icons.flag),
+                      buildTextField("City", cityController, Icons.location_city),
+                      buildTextField("Country Code", countryCodeController, Icons.add),
+                      buildTextField("About Me", aboutController, Icons.info, maxLines: 3),
                       const SizedBox(height: 30),
                       SizedBox(
                         width: double.infinity,

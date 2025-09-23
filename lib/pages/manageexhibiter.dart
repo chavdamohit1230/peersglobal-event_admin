@@ -114,10 +114,10 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:Appcolor.backgroundLight,
       appBar: AppBar(
         title: const Text("Exhibiter Section"),
-        backgroundColor: const Color(0xFFF3F8FE),
+        backgroundColor: Appcolor.backgroundDark,
         foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
@@ -235,7 +235,7 @@ class ExhibiterDetailView extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3F8FE),
+        backgroundColor:Appcolor.backgroundLight,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 1,

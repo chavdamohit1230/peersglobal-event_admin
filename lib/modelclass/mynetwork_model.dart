@@ -17,8 +17,11 @@ class Mynetwork{
   final String? companywebsite;
   final String? contry;
   final String? city;
+  final String? countrycode;
    final String? industry;
+   final String? otherinfo;
    final String? purposeOfAttending;
+   final String? brandname;
 
   Mynetwork({
 
@@ -28,10 +31,13 @@ class Mynetwork{
     this.id,
     this.role,
      this.reject,
+    this.brandname,
+    this.otherinfo,
     this.accept,
     this.aboutme,
     this.organization,
     this.email,
+    this.countrycode,
     this.mobile,
     this.purposeOfAttending,
     this.industry,
