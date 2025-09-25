@@ -7,6 +7,7 @@ import 'package:peersglobaladmin/pages/manageexhibiter.dart';
 import 'package:peersglobaladmin/pages/managefloorplan.dart';
 import 'package:peersglobaladmin/pages/managesponsor.dart';
 import 'package:peersglobaladmin/pages/manageuser.dart';
+import 'package:peersglobaladmin/pages/timeline.dart';
 
 
 class AppRout{
@@ -38,7 +39,8 @@ class AppRout{
       GoRoute(path: '/managefloorplan',
           builder: (context, state) =>ManageFloorPlan()),
 
-
+      GoRoute(path: '/timeline',
+      builder: (context, state) => Timeline(),)
 
 
 
