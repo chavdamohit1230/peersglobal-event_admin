@@ -100,8 +100,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 _buildDashboardCard("Feedback & Support", Icons.feedback, Colors.brown, () {
                   context.push('/feedback');
                 }),
-                _buildDashboardCard("Settings", Icons.settings, Colors.grey, () {
-                  context.push('/settings');
+                _buildDashboardCard("Event profile", Icons.calendar_month_sharp, Colors.grey, () {
+                  context.push('/eventprofile');
                 }),
               ],
             ),

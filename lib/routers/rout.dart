@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:peersglobaladmin/pages/admin_home_screen.dart';
 import 'package:peersglobaladmin/pages/admin_splashscreen.dart';
 import 'package:peersglobaladmin/pages/adminlogin.dart';
+import 'package:peersglobaladmin/pages/eventprofile.dart';
 import 'package:peersglobaladmin/pages/forgetpasswordscreen.dart';
 import 'package:peersglobaladmin/pages/manageexhibiter.dart';
 import 'package:peersglobaladmin/pages/managefloorplan.dart';
@@ -40,7 +41,10 @@ class AppRout{
           builder: (context, state) =>ManageFloorPlan()),
 
       GoRoute(path: '/timeline',
-      builder: (context, state) => Timeline(),)
+      builder: (context, state) => Timeline(),),
+
+      GoRoute(path: '/eventprofile',
+        builder: (context, state) => Eventprofile(),)
 
 
 
