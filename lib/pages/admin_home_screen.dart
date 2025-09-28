@@ -80,7 +80,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   context.push('/managesponsor');
                 }),
                 _buildDashboardCard("Speakers ", Icons.mic, Colors.deepOrange, () {
-                  context.push('/speakers');
+                  context.push('/speaker');
                 }),
                 _buildDashboardCard("Event Timeline", Icons.timeline, Colors.teal, () {
                   context.push('/timeline');

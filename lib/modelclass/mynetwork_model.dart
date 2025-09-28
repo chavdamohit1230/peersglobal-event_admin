@@ -22,6 +22,8 @@ class Mynetwork{
    final String? otherinfo;
    final String? purposeOfAttending;
    final String? brandname;
+  final List<String>? socialLinks;
+  final String? compayname;
 
   Mynetwork({
 
@@ -44,7 +46,9 @@ class Mynetwork{
     this.companywebsite,
     this.contry,
     this.city,
-    this.businessLocation
+    this.compayname,
+    this.businessLocation,
+    this.socialLinks,
 
 });
 

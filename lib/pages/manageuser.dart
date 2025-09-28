@@ -313,6 +313,8 @@ class UserDetailView extends StatelessWidget {
                   const Divider(),
                   _buildInfoRow(Icons.work_outline, "Designation", user.Designnation),
                   const Divider(),
+                  _buildInfoRow(Icons.work_outline, "CompanyName ",user.compayname?? "N/A "),
+                  const Divider(),
                   _buildInfoRow(Icons.flag, "Country Code", user.countrycode ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.phone, "Mobile", user.mobile ?? "N/A"),
@@ -400,6 +402,7 @@ class _AddUserFormState extends State<AddUserForm> {
   final TextEditingController countryController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController countryCodeController = TextEditingController();
+  final TextEditingController companynmae = TextEditingController();
   final TextEditingController aboutController = TextEditingController();
 
   @override
@@ -414,6 +417,7 @@ class _AddUserFormState extends State<AddUserForm> {
     cityController.dispose();
     countryCodeController.dispose();
     aboutController.dispose();
+    companynmae.dispose();
     super.dispose();
   }
 
@@ -430,6 +434,7 @@ class _AddUserFormState extends State<AddUserForm> {
       'city': cityController.text.trim(),
       'countrycode': countryCodeController.text.trim(),
       'aboutme': aboutController.text.trim(),
+      'companyname':companynmae.text.trim(),
       'profileImage': 'https://via.placeholder.com/150',
     });
 
@@ -446,6 +451,7 @@ class _AddUserFormState extends State<AddUserForm> {
       city: cityController.text.trim(),
       countrycode: countryCodeController.text.trim(),
       aboutme: aboutController.text.trim(),
+      compayname: companynmae.text.trim()
     );
 
     widget.onAddUser(newUser);
@@ -483,10 +489,13 @@ class _AddUserFormState extends State<AddUserForm> {
                               fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
                       buildTextField("Full Name", nameController, Icons.person),
-                      buildTextField("Email", emailController, Icons.email,
-                          keyboardType: TextInputType.emailAddress),
                       buildTextField("Designation", designationController,
                           Icons.work_outline),
+                      buildTextField("CompanyName", companynmae,
+                          Icons.home_work_outlined),
+                      buildTextField("Email", emailController, Icons.email,
+                          keyboardType: TextInputType.emailAddress),
+
                       buildTextField("Mobile Number", mobileController,
                           Icons.phone, keyboardType: TextInputType.phone),
                       buildTextField("Company Website", companyWebSiteController, Icons.language,

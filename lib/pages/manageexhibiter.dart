@@ -21,6 +21,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
   List<Mynetwork> filteredExhibitors = [];
   final TextEditingController searchController = TextEditingController();
 
+
   @override
   void initState() {
     super.initState();
@@ -244,6 +245,11 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   final TextEditingController countryController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController roleController = TextEditingController();
+  final TextEditingController facebookController = TextEditingController();
+  final TextEditingController twitterController = TextEditingController();
+  final TextEditingController linkedinController = TextEditingController();
+  final TextEditingController instagramController = TextEditingController();
+
 
   File? _imageFile;
   Uint8List? webImage;
@@ -263,6 +269,19 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
       countryController.text = ex.contry ?? '';
       mobileController.text = ex.mobile ?? '';
       roleController.text = ex.Designnation;
+
+      facebookController.text = ex.socialLinks?.firstWhere(
+              (e) => e.contains("facebook"),
+          orElse: () => "") ?? '';
+      twitterController.text = ex.socialLinks?.firstWhere(
+              (e) => e.contains("twitter"),
+          orElse: () => "") ?? '';
+      linkedinController.text = ex.socialLinks?.firstWhere(
+              (e) => e.contains("linkedin"),
+          orElse: () => "") ?? '';
+      instagramController.text = ex.socialLinks?.firstWhere(
+              (e) => e.contains("instagram"),
+          orElse: () => "") ?? '';
     }
   }
 
@@ -299,6 +318,14 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
         imageUrl = await storageRef.getDownloadURL();
       }
 
+      List<String> socialLinks = [
+        facebookController.text.trim(),
+        twitterController.text.trim(),
+        linkedinController.text.trim(),
+        instagramController.text.trim(),
+      ].where((e) => e.isNotEmpty).toList();
+
+
       if (widget.isEditMode && widget.exhibiter != null) {
         await FirebaseFirestore.instance.collection('userregister').doc(widget.exhibiter!.id).update({
           'name': nameController.text.trim(),
@@ -312,6 +339,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'role': roleController.text.trim(),
           'profileImage': imageUrl,
           'designation': roleController.text.trim(),
+          'socialLinks': socialLinks,
         });
 
         final updatedExhibitor = Mynetwork(
@@ -328,6 +356,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           contry: countryController.text.trim(),
           city: widget.exhibiter!.city,
           aboutme: aboutMeController.text.trim(),
+          socialLinks: socialLinks,
         );
 
         widget.onAddExhibitor(updatedExhibitor);
@@ -348,6 +377,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'designation': roleController.text.trim(),
           'industry': '',
           'city': '',
+          'socialLinks': socialLinks,
         });
 
         final newExhibitor = Mynetwork(
@@ -364,6 +394,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           contry: countryController.text.trim(),
           city: '',
           aboutme: aboutMeController.text.trim(),
+          socialLinks: socialLinks,
         );
 
         widget.onAddExhibitor(newExhibitor);
@@ -456,6 +487,10 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
                   buildTextField("Country", countryController, Icons.flag_outlined),
                   buildTextField("Mobile Number", mobileController, Icons.phone_iphone, keyboardType: TextInputType.phone),
                   buildTextField("Role", roleController, Icons.work_outline),
+                  buildTextField("Facebook", facebookController, Icons.facebook),
+                  buildTextField("Twitter", twitterController, Icons.travel_explore),
+                  buildTextField("LinkedIn", linkedinController, Icons.link),
+                  buildTextField("Instagram", instagramController, Icons.camera_alt),
                   const SizedBox(height: 20),
                   _isLoading
                       ? const CircularProgressIndicator()

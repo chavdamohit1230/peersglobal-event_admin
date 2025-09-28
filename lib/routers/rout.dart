@@ -8,6 +8,8 @@ import 'package:peersglobaladmin/pages/manageexhibiter.dart';
 import 'package:peersglobaladmin/pages/managefloorplan.dart';
 import 'package:peersglobaladmin/pages/managesponsor.dart';
 import 'package:peersglobaladmin/pages/manageuser.dart';
+import 'package:peersglobaladmin/pages/speaker.dart';
+import 'package:peersglobaladmin/pages/sponsor.dart';
 import 'package:peersglobaladmin/pages/timeline.dart';
 
 
@@ -44,9 +46,13 @@ class AppRout{
       builder: (context, state) => Timeline(),),
 
       GoRoute(path: '/eventprofile',
-        builder: (context, state) => Eventprofile(),)
+        builder: (context, state) => Eventprofile(),),
 
+      GoRoute(path: '/speaker',
+        builder: (context, state) => Speaker(),),
 
+        GoRoute(path: '/sponsor',
+        builder: (context, state) => Sponsor(),)
 
     ]);
 
