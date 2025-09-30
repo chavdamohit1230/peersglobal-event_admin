@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:peersglobaladmin/colors/colorfile.dart';
 import 'package:peersglobaladmin/modelclass/mynetwork_model.dart';
 
+// -------------------- Manage Sponsor Screen --------------------
 class Managesponsor extends StatefulWidget {
   const Managesponsor({super.key});
 
@@ -41,7 +45,7 @@ class _ManagesponsorState extends State<Managesponsor> {
           id: doc.id,
           username: data['name'] ?? '',
           Designnation: data['designation'] ?? '',
-          ImageUrl: data['profileImage'] ?? 'https://via.placeholder.com/150',
+          ImageUrl: data['photoUrl'] ?? 'https://via.placeholder.com/150',
           email: data['email'] ?? '',
           mobile: data['mobile'] ?? '',
           organization: data['organization'] ?? '',
@@ -85,6 +89,16 @@ class _ManagesponsorState extends State<Managesponsor> {
     setState(() {
       sponsors.add(sponsor);
       filteredSponsors.add(sponsor);
+    });
+  }
+
+  void updateSponsorInList(Mynetwork sponsor) {
+    setState(() {
+      final index = sponsors.indexWhere((s) => s.id == sponsor.id);
+      if (index != -1) {
+        sponsors[index] = sponsor;
+        filteredSponsors[index] = sponsor;
+      }
     });
   }
 
@@ -159,23 +173,48 @@ class _ManagesponsorState extends State<Managesponsor> {
                     sponsor.industry ?? '',
                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
-                  trailing: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SponsorDetailView(
-                            sponsor: sponsor,
-                            onRemove: () => removeSponsor(sponsor.id!),
-                          ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddSponsorForm(
+                                sponsor: sponsor,
+                                onAddSponsor: addSponsorToList,
+                                onEditSponsor: updateSponsorInList,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:Colors.green,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text("View", style: TextStyle(color: Colors.white)),
+                        child: const Text("Edit", style: TextStyle(color: Colors.white)),
+                      ),
+                      const SizedBox(width: 6),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SponsorDetailView(
+                                sponsor: sponsor,
+                                onRemove: () => removeSponsor(sponsor.id!),
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text("View", style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -189,7 +228,9 @@ class _ManagesponsorState extends State<Managesponsor> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddSponsorForm(onAddSponsor: addSponsorToList),
+              builder: (context) => AddSponsorForm(
+                onAddSponsor: addSponsorToList,
+              ),
             ),
           );
         },
@@ -217,7 +258,8 @@ class SponsorDetailView extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 1,
           iconTheme: const IconThemeData(color: Colors.black87),
-          title: Text(sponsor.username, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+          title: Text(sponsor.username,
+              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
           bottom: const TabBar(
             labelColor: Colors.blue,
             unselectedLabelColor: Colors.black54,
@@ -237,16 +279,25 @@ class SponsorDetailView extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      gradient: LinearGradient(
+                          colors: [Color(0xFFDCEAF4), Color(0xFFFFFFFF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight),
                       borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
                     ),
                     child: Column(
                       children: [
-                        CircleAvatar(radius: 60, backgroundColor: Colors.white, backgroundImage: NetworkImage(sponsor.ImageUrl)),
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white,
+                          backgroundImage: NetworkImage(sponsor.ImageUrl),
+                        ),
                         const SizedBox(height: 12),
-                        Text(sponsor.username, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text(sponsor.username,
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
-                        Text(sponsor.Designnation, style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+                        Text(sponsor.Designnation,
+                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
                       ],
                     ),
                   ),
@@ -266,6 +317,7 @@ class SponsorDetailView extends StatelessWidget {
                         _detailRow("Brand Name", sponsor.brandname ?? ""),
                         _detailRow("Business Location", sponsor.businessLocation ?? ""),
                         _detailRow("Organization", sponsor.organization ?? ""),
+                        _detailRow("City", sponsor.city ?? ""),
                         _detailRow("Country Code", sponsor.countrycode ?? ""),
                         _detailRow("Category", sponsor.industry ?? ""),
                         _detailRow("Other Info", sponsor.otherinfo ?? ""),
@@ -308,10 +360,13 @@ class SponsorDetailView extends StatelessWidget {
   }
 }
 
-// -------------------- Add Sponsor Form --------------------
+// -------------------- Add/Edit Sponsor Form --------------------
 class AddSponsorForm extends StatefulWidget {
-  final Function(Mynetwork) onAddSponsor;
-  const AddSponsorForm({super.key, required this.onAddSponsor});
+  final Mynetwork? sponsor;
+  final Function(Mynetwork)? onAddSponsor;
+  final Function(Mynetwork)? onEditSponsor;
+
+  const AddSponsorForm({super.key, this.sponsor, this.onAddSponsor, this.onEditSponsor});
 
   @override
   State<AddSponsorForm> createState() => _AddSponsorFormState();
@@ -328,9 +383,32 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
   final TextEditingController brandNameController = TextEditingController();
   final TextEditingController otherInfoController = TextEditingController();
   final TextEditingController countryCodeController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
 
   String selectedCategory = "Silver";
   final List<String> categories = ["Silver", "Gold", "Platinum"];
+
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sponsor != null) {
+      final s = widget.sponsor!;
+      nameController.text = s.username;
+      emailController.text = s.email ?? '';
+      designationController.text = s.Designnation;
+      organizationController.text = s.organization ?? '';
+      businessLocationController.text = s.businessLocation ?? '';
+      brandNameController.text = s.brandname ?? '';
+      otherInfoController.text = s.otherinfo ?? '';
+      countryCodeController.text = s.countrycode ?? '';
+      cityController.text = s.city ?? '';
+      selectedCategory = s.industry ?? 'Silver';
+    }
+  }
 
   @override
   void dispose() {
@@ -342,111 +420,199 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
     brandNameController.dispose();
     otherInfoController.dispose();
     countryCodeController.dispose();
+    cityController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    if (pickedFile != null) setState(() => _selectedImage = File(pickedFile.path));
   }
 
   Future<void> saveSponsor() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final docRef = await FirebaseFirestore.instance.collection("userregister").add({
-      "name": nameController.text.trim(),
-      "email": emailController.text.trim(),
-      "designation": designationController.text.trim(),
-      "organization": organizationController.text.trim(),
-      "businessLocation": businessLocationController.text.trim(),
-      "brandName": brandNameController.text.trim(),
-      "otherInfo": otherInfoController.text.trim(),
-      "countryCode": countryCodeController.text.trim(),
-      "role": "sponsor",
-      "sponsorType": selectedCategory,
-      "profileImage": "https://via.placeholder.com/150",
-    });
+    setState(() => isLoading = true);
 
-    final newSponsor = Mynetwork(
-      id: docRef.id,
-      username: nameController.text.trim(),
-      Designnation: designationController.text.trim(),
-      organization: organizationController.text.trim(),
-      businessLocation: businessLocationController.text.trim(),
-      brandname: brandNameController.text.trim(),
-      otherinfo: otherInfoController.text.trim(),
-      countrycode: countryCodeController.text.trim(),
-      role: "sponsor",
-      industry: selectedCategory,
-      ImageUrl: "https://via.placeholder.com/150",
-    );
+    String? imageUrl;
+    if (_selectedImage != null) {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child("sponsor_images")
+          .child("${DateTime.now().millisecondsSinceEpoch}.jpg");
+      await ref.putFile(_selectedImage!);
+      imageUrl = await ref.getDownloadURL();
+    }
 
-    widget.onAddSponsor(newSponsor);
+    if (widget.sponsor == null) {
+      // Add New Sponsor
+      final docRef = await FirebaseFirestore.instance.collection("userregister").add({
+        "name": nameController.text.trim(),
+        "email": emailController.text.trim(),
+        "designation": designationController.text.trim(),
+        "organization": organizationController.text.trim(),
+        "businessLocation": businessLocationController.text.trim(),
+        "brandName": brandNameController.text.trim(),
+        "otherInfo": otherInfoController.text.trim(),
+        "countryCode": countryCodeController.text.trim(),
+        "city": cityController.text.trim(),
+        "role": "sponsor",
+        "sponsorType": selectedCategory,
+        "photoUrl": imageUrl ?? "https://via.placeholder.com/150",
+      });
+
+      final newSponsor = Mynetwork(
+        id: docRef.id,
+        username: nameController.text.trim(),
+        Designnation: designationController.text.trim(),
+        organization: organizationController.text.trim(),
+        businessLocation: businessLocationController.text.trim(),
+        brandname: brandNameController.text.trim(),
+        otherinfo: otherInfoController.text.trim(),
+        countrycode: countryCodeController.text.trim(),
+        city: cityController.text.trim(),
+        role: "sponsor",
+        industry: selectedCategory,
+        ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
+      );
+
+      widget.onAddSponsor?.call(newSponsor);
+    } else {
+      // Edit Sponsor
+      final s = widget.sponsor!;
+      final docRef = FirebaseFirestore.instance.collection("userregister").doc(s.id);
+      await docRef.update({
+        "name": nameController.text.trim(),
+        "email": emailController.text.trim(),
+        "designation": designationController.text.trim(),
+        "organization": organizationController.text.trim(),
+        "businessLocation": businessLocationController.text.trim(),
+        "brandName": brandNameController.text.trim(),
+        "otherInfo": otherInfoController.text.trim(),
+        "countryCode": countryCodeController.text.trim(),
+        "city": cityController.text.trim(),
+        "sponsorType": selectedCategory,
+        "photoUrl": imageUrl ?? s.ImageUrl,
+      });
+
+      final updatedSponsor = Mynetwork(
+        id: s.id,
+        username: nameController.text.trim(),
+        Designnation: designationController.text.trim(),
+        organization: organizationController.text.trim(),
+        businessLocation: businessLocationController.text.trim(),
+        brandname: brandNameController.text.trim(),
+        otherinfo: otherInfoController.text.trim(),
+        countrycode: countryCodeController.text.trim(),
+        city: cityController.text.trim(),
+        role: s.role,
+        industry: selectedCategory,
+        ImageUrl: imageUrl ?? s.ImageUrl,
+      );
+
+      widget.onEditSponsor?.call(updatedSponsor);
+    }
+
+    setState(() => isLoading = false);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sponsor Added Successfully")));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.sponsor == null ? "Sponsor Added Successfully" : "Sponsor Updated Successfully")));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFDCEAF4),
-      appBar: AppBar(
-        title: const Text("Add Sponsor"),
-        backgroundColor: const Color(0xFFDCEAF4),
-        foregroundColor: Colors.black87,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildTextField("Full Name", nameController, Icons.person),
-                    buildTextField("Email", emailController, Icons.email, keyboardType: TextInputType.emailAddress),
-                    buildTextField("Designation", designationController, Icons.work_outline),
-                    buildTextField("Organization", organizationController, Icons.business),
-                    buildTextField("Business Location", businessLocationController, Icons.location_on),
-                    buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
-                    buildTextField("Other Info", otherInfoController, Icons.notes_outlined, maxLines: 3),
-                    buildTextField("Country Code", countryCodeController, Icons.phone_android),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      value: selectedCategory,
-                      items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                      onChanged: (value) {
-                        if (value != null) setState(() => selectedCategory = value);
-                      },
-                      decoration: InputDecoration(
-                        labelText: "Category",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: const Color(0xFFDCEAF4).withOpacity(0.4),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: saveSponsor,
-                        icon: const Icon(Icons.save),
-                        label: const Text("Save Sponsor", style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Appcolor.secondary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: const Color(0xFFDCEAF4),
+          appBar: AppBar(
+            title: Text(widget.sponsor == null ? "Add Sponsor" : "Edit Sponsor"),
+            backgroundColor: const Color(0xFFDCEAF4),
+            foregroundColor: Colors.black87,
+            elevation: 0,
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              elevation: 6,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundImage: _selectedImage != null
+                                  ? FileImage(_selectedImage!)
+                                  : (widget.sponsor != null
+                                  ? NetworkImage(widget.sponsor!.ImageUrl)
+                                  : const NetworkImage("https://via.placeholder.com/150")) as ImageProvider,
+                              child: _selectedImage == null && widget.sponsor == null
+                                  ? const Icon(Icons.camera_alt, size: 30, color: Colors.white70)
+                                  : null,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 20),
+                        buildTextField("Full Name", nameController, Icons.person),
+                        buildTextField("Email", emailController, Icons.email, keyboardType: TextInputType.emailAddress),
+                        buildTextField("Designation", designationController, Icons.work_outline),
+                        buildTextField("Organization", organizationController, Icons.business),
+                        buildTextField("Business Location", businessLocationController, Icons.location_on),
+                        buildTextField("City", cityController, Icons.location_city),
+                        buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
+                        buildTextField("Other Info", otherInfoController, Icons.notes_outlined, maxLines: 3),
+                        buildTextField("Country Code", countryCodeController, Icons.phone_android),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                          value: selectedCategory,
+                          items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                          onChanged: (value) {
+                            if (value != null) setState(() => selectedCategory = value);
+                          },
+                          decoration: InputDecoration(
+                            labelText: "Category",
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: const Color(0xFFDCEAF4).withOpacity(0.4),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: saveSponsor,
+                            icon: const Icon(Icons.save),
+                            label: Text(widget.sponsor == null ? "Save Sponsor" : "Update Sponsor",
+                                style: const TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Appcolor.secondary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
+        if (isLoading)
+          Container(
+            color: Colors.black.withOpacity(0.3),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+      ],
     );
   }
 
