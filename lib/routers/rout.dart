@@ -9,7 +9,6 @@ import 'package:peersglobaladmin/pages/managefloorplan.dart';
 import 'package:peersglobaladmin/pages/managesponsor.dart';
 import 'package:peersglobaladmin/pages/manageuser.dart';
 import 'package:peersglobaladmin/pages/speaker.dart';
-import 'package:peersglobaladmin/pages/sponsor.dart';
 import 'package:peersglobaladmin/pages/timeline.dart';
 
 
@@ -51,8 +50,7 @@ class AppRout{
       GoRoute(path: '/speaker',
         builder: (context, state) => Speaker(),),
 
-        GoRoute(path: '/sponsor',
-        builder: (context, state) => Sponsor(),)
+
 
     ]);
 

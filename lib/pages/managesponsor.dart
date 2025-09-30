@@ -8,7 +8,7 @@ import 'package:peersglobaladmin/modelclass/mynetwork_model.dart';
 
 // -------------------- Manage Sponsor Screen --------------------
 class Managesponsor extends StatefulWidget {
-  const Managesponsor({super.key});
+  const Managesponsor({Key? key}) : super(key: key);
 
   @override
   State<Managesponsor> createState() => _ManagesponsorState();
@@ -190,7 +190,7 @@ class _ManagesponsorState extends State<Managesponsor> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:Colors.green,
+                          backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         child: const Text("Edit", style: TextStyle(color: Colors.white)),
@@ -246,7 +246,7 @@ class SponsorDetailView extends StatelessWidget {
   final Mynetwork sponsor;
   final VoidCallback onRemove;
 
-  const SponsorDetailView({super.key, required this.sponsor, required this.onRemove});
+  const SponsorDetailView({Key? key, required this.sponsor, required this.onRemove}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -321,6 +321,52 @@ class SponsorDetailView extends StatelessWidget {
                         _detailRow("Country Code", sponsor.countrycode ?? ""),
                         _detailRow("Category", sponsor.industry ?? ""),
                         _detailRow("Other Info", sponsor.otherinfo ?? ""),
+                        const SizedBox(height: 12),
+                        // Website + Social links are pulled from firestore in case the model doesn't contain them
+                        FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance.collection('userregister').doc(sponsor.id).get(),
+                          builder: (context, snap) {
+                            if (snap.connectionState != ConnectionState.done) return const SizedBox();
+                            if (!snap.hasData || !(snap.data!.data() is Map<String, dynamic>)) {
+                              return const SizedBox();
+                            }
+                            final data = snap.data!.data() as Map<String, dynamic>;
+                            final website = (data['companywebsite'] ?? sponsor.companywebsite ?? '') as String;
+                            final social = (data['socialLinks'] ?? {}) as Map<String, dynamic>;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (website.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.language, size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Text(website)),
+                                    ],
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                if (social.isNotEmpty) ...[
+                                  const Text("Social Links", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 8),
+                                  for (final entry in social.entries)
+                                    if ((entry.value as String).isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 6),
+                                        child: Row(
+                                          children: [
+                                            Icon(_iconForSocialKey(entry.key), size: 18),
+                                            const SizedBox(width: 8),
+                                            Expanded(child: Text(entry.value ?? "")),
+                                          ],
+                                        ),
+                                      ),
+                                ],
+                              ],
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -358,6 +404,23 @@ class SponsorDetailView extends StatelessWidget {
       ),
     );
   }
+
+  IconData _iconForSocialKey(String key) {
+    switch (key.toLowerCase()) {
+      case 'facebook':
+        return Icons.facebook;
+      case 'instagram':
+        return Icons.camera_alt;
+      case 'linkedin':
+        return Icons.work;
+      case 'twitter':
+        return Icons.alternate_email;
+      case 'youtube':
+        return Icons.video_library;
+      default:
+        return Icons.link;
+    }
+  }
 }
 
 // -------------------- Add/Edit Sponsor Form --------------------
@@ -366,7 +429,7 @@ class AddSponsorForm extends StatefulWidget {
   final Function(Mynetwork)? onAddSponsor;
   final Function(Mynetwork)? onEditSponsor;
 
-  const AddSponsorForm({super.key, this.sponsor, this.onAddSponsor, this.onEditSponsor});
+  const AddSponsorForm({Key? key, this.sponsor, this.onAddSponsor, this.onEditSponsor}) : super(key: key);
 
   @override
   State<AddSponsorForm> createState() => _AddSponsorFormState();
@@ -384,9 +447,15 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
   final TextEditingController otherInfoController = TextEditingController();
   final TextEditingController countryCodeController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
+  final TextEditingController websiteController = TextEditingController();
+  final TextEditingController categoryController = TextEditingController();
 
-  String selectedCategory = "Silver";
-  final List<String> categories = ["Silver", "Gold", "Platinum"];
+  // Social media controllers
+  final TextEditingController facebookController = TextEditingController();
+  final TextEditingController instagramController = TextEditingController();
+  final TextEditingController linkedinController = TextEditingController();
+  final TextEditingController twitterController = TextEditingController();
+  final TextEditingController youtubeController = TextEditingController();
 
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
@@ -406,7 +475,24 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
       otherInfoController.text = s.otherinfo ?? '';
       countryCodeController.text = s.countrycode ?? '';
       cityController.text = s.city ?? '';
-      selectedCategory = s.industry ?? 'Silver';
+      websiteController.text = s.companywebsite ?? '';
+      categoryController.text = s.industry ?? '';
+      // Try to prefill social links from firestore doc (if present)
+      if (s.id != null) {
+        FirebaseFirestore.instance.collection('userregister').doc(s.id).get().then((doc) {
+          final data = doc.data();
+          if (data != null && data['socialLinks'] is Map) {
+            final social = Map<String, dynamic>.from(data['socialLinks']);
+            setState(() {
+              facebookController.text = social['facebook'] ?? '';
+              instagramController.text = social['instagram'] ?? '';
+              linkedinController.text = social['linkedin'] ?? '';
+              twitterController.text = social['twitter'] ?? '';
+              youtubeController.text = social['youtube'] ?? '';
+            });
+          }
+        });
+      }
     }
   }
 
@@ -421,6 +507,13 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
     otherInfoController.dispose();
     countryCodeController.dispose();
     cityController.dispose();
+    websiteController.dispose();
+    categoryController.dispose();
+    facebookController.dispose();
+    instagramController.dispose();
+    linkedinController.dispose();
+    twitterController.dispose();
+    youtubeController.dispose();
     super.dispose();
   }
 
@@ -444,6 +537,14 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
       imageUrl = await ref.getDownloadURL();
     }
 
+    final socialLinks = {
+      "facebook": facebookController.text.trim(),
+      "instagram": instagramController.text.trim(),
+      "linkedin": linkedinController.text.trim(),
+      "twitter": twitterController.text.trim(),
+      "youtube": youtubeController.text.trim(),
+    };
+
     if (widget.sponsor == null) {
       // Add New Sponsor
       final docRef = await FirebaseFirestore.instance.collection("userregister").add({
@@ -456,8 +557,10 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         "otherInfo": otherInfoController.text.trim(),
         "countryCode": countryCodeController.text.trim(),
         "city": cityController.text.trim(),
+        "companywebsite": websiteController.text.trim(),
         "role": "sponsor",
-        "sponsorType": selectedCategory,
+        "sponsorType": categoryController.text.trim(),
+        "socialLinks": socialLinks,
         "photoUrl": imageUrl ?? "https://via.placeholder.com/150",
       });
 
@@ -472,7 +575,8 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         countrycode: countryCodeController.text.trim(),
         city: cityController.text.trim(),
         role: "sponsor",
-        industry: selectedCategory,
+        companywebsite: websiteController.text.trim(),
+        industry: categoryController.text.trim(),
         ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
       );
 
@@ -491,7 +595,9 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         "otherInfo": otherInfoController.text.trim(),
         "countryCode": countryCodeController.text.trim(),
         "city": cityController.text.trim(),
-        "sponsorType": selectedCategory,
+        "companywebsite": websiteController.text.trim(),
+        "sponsorType": categoryController.text.trim(),
+        "socialLinks": socialLinks,
         "photoUrl": imageUrl ?? s.ImageUrl,
       });
 
@@ -506,7 +612,8 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         countrycode: countryCodeController.text.trim(),
         city: cityController.text.trim(),
         role: s.role,
-        industry: selectedCategory,
+        companywebsite: websiteController.text.trim(),
+        industry: categoryController.text.trim(),
         ImageUrl: imageUrl ?? s.ImageUrl,
       );
 
@@ -516,7 +623,8 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
     setState(() => isLoading = false);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.sponsor == null ? "Sponsor Added Successfully" : "Sponsor Updated Successfully")));
+      SnackBar(content: Text(widget.sponsor == null ? "Sponsor Added Successfully" : "Sponsor Updated Successfully")),
+    );
   }
 
   @override
@@ -568,22 +676,19 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
                         buildTextField("Business Location", businessLocationController, Icons.location_on),
                         buildTextField("City", cityController, Icons.location_city),
                         buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
+                        buildTextField("Website", websiteController, Icons.language),
                         buildTextField("Other Info", otherInfoController, Icons.notes_outlined, maxLines: 3),
                         buildTextField("Country Code", countryCodeController, Icons.phone_android),
                         const SizedBox(height: 20),
-                        DropdownButtonFormField<String>(
-                          value: selectedCategory,
-                          items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                          onChanged: (value) {
-                            if (value != null) setState(() => selectedCategory = value);
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Category",
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            filled: true,
-                            fillColor: const Color(0xFFDCEAF4).withOpacity(0.4),
-                          ),
-                        ),
+                        buildTextField("Category", categoryController, Icons.category),
+                        const Divider(height: 40),
+                        const Text("Social Media Links",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        buildTextField("Facebook", facebookController, Icons.facebook),
+                        buildTextField("Instagram", instagramController, Icons.camera_alt),
+                        buildTextField("LinkedIn", linkedinController, Icons.work),
+                        buildTextField("Twitter", twitterController, Icons.alternate_email),
+                        buildTextField("YouTube", youtubeController, Icons.video_library),
                         const SizedBox(height: 30),
                         SizedBox(
                           width: double.infinity,
@@ -628,11 +733,14 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
           prefixIcon: Icon(icon, color: Appcolor.textDark),
           labelText: label,
           filled: true,
-          fillColor: const Color(0xFFDCEAF4).withOpacity(0.4),
+          fillColor: Color(0xFFDCEAF4).withOpacity(0.4),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) return "$label is required";
+          // make some fields optional if you want (here we require name & email)
+          if (label == "Full Name" || label == "Email") {
+            if (value == null || value.isEmpty) return "$label is required";
+          }
           return null;
         },
       ),
