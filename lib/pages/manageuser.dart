@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:peersglobaladmin/colors/colorfile.dart';
 import 'package:peersglobaladmin/modelclass/mynetwork_model.dart';
 
@@ -39,7 +42,8 @@ class _ManageuserState extends State<Manageuser> {
           id: doc.id,
           username: data['name'] ?? '',
           Designnation: data['designation'] ?? '',
-          ImageUrl: data['profileImage'] ?? 'https://via.placeholder.com/150',
+          ImageUrl: data['photoUrl'] ??
+              'https://via.placeholder.com/150', // updated field
           email: data['email'] ?? '',
           mobile: data['mobile'] ?? '',
           organization: data['organization'] ?? '',
@@ -50,6 +54,8 @@ class _ManageuserState extends State<Manageuser> {
           city: data['city'] ?? '',
           aboutme: data['aboutme'] ?? '',
           countrycode: data['countrycode'] ?? '',
+          compayname: data['companyname'] ?? '',
+          role: data['role'] ?? 'user', // default role as normal user
         );
       }).toList();
 
@@ -62,29 +68,6 @@ class _ManageuserState extends State<Manageuser> {
       print("Error fetching users from Firebase: $e");
       setState(() => isLoading = false);
     }
-  }
-
-  void removeUser(String userId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('userregister')
-          .doc(userId)
-          .delete();
-
-      setState(() {
-        users.removeWhere((u) => u.id == userId);
-        filteredUsers.removeWhere((u) => u.id == userId);
-      });
-    } catch (e) {
-      print("Error removing user: $e");
-    }
-  }
-
-  void addUserToList(Mynetwork user) {
-    setState(() {
-      users.add(user);
-      filteredUsers.add(user);
-    });
   }
 
   void filterSearch(String query) {
@@ -108,12 +91,78 @@ class _ManageuserState extends State<Manageuser> {
     });
   }
 
+  void addUserToList(Mynetwork user) {
+    setState(() {
+      users.add(user);
+      filteredUsers.add(user);
+    });
+  }
+
+  void removeUser(Mynetwork user) async {
+    // Role check
+    if (user.role == "exhibitor" || user.role == "sponsor") {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Action Denied"),
+          content: Text(
+              "You can't delete ${user.username} because they are ${user.role}."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Confirm delete
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete User"),
+        content: Text("Do you want to delete ${user.username}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // close dialog
+              try {
+                await FirebaseFirestore.instance
+                    .collection('userregister')
+                    .doc(user.id)
+                    .delete();
+
+                setState(() {
+                  users.removeWhere((u) => u.id == user.id);
+                  filteredUsers.removeWhere((u) => u.id == user.id);
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("${user.username} deleted successfully")),
+                );
+              } catch (e) {
+                print("Error deleting user: $e");
+              }
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void printUsers() {
     for (var u in filteredUsers) {
       print("${u.username} - ${u.Designnation} - ${u.email}");
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Users printed to console")));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Users printed to console")));
   }
 
   @override
@@ -199,7 +248,19 @@ class _ManageuserState extends State<Manageuser> {
                         MaterialPageRoute(
                           builder: (_) => UserDetailView(
                             user: user,
-                            onRemove: () => removeUser(user.id!),
+                            onRemove: () => removeUser(user),
+                            onUpdate: (updatedUser) {
+                              setState(() {
+                                int idx = users.indexWhere(
+                                        (element) =>
+                                    element.id ==
+                                        updatedUser.id);
+                                if (idx != -1) {
+                                  users[idx] = updatedUser;
+                                  filteredUsers[idx] = updatedUser;
+                                }
+                              });
+                            },
                           ),
                         ),
                       );
@@ -242,11 +303,15 @@ class _ManageuserState extends State<Manageuser> {
   }
 }
 
+// ------------------- User Detail View -------------------
+
 class UserDetailView extends StatelessWidget {
   final Mynetwork user;
   final VoidCallback onRemove;
+  final Function(Mynetwork)? onUpdate;
 
-  const UserDetailView({super.key, required this.user, required this.onRemove});
+  const UserDetailView(
+      {super.key, required this.user, required this.onRemove, this.onUpdate});
 
   @override
   Widget build(BuildContext context) {
@@ -311,19 +376,24 @@ class UserDetailView extends StatelessWidget {
                 children: [
                   _buildInfoRow(Icons.person, "Name", user.username),
                   const Divider(),
-                  _buildInfoRow(Icons.work_outline, "Designation", user.Designnation),
+                  _buildInfoRow(
+                      Icons.work_outline, "Designation", user.Designnation),
                   const Divider(),
-                  _buildInfoRow(Icons.work_outline, "CompanyName ",user.compayname?? "N/A "),
+                  _buildInfoRow(Icons.work_outline, "CompanyName ",
+                      user.compayname ?? "N/A "),
                   const Divider(),
-                  _buildInfoRow(Icons.flag, "Country Code", user.countrycode ?? "N/A"),
+                  _buildInfoRow(
+                      Icons.flag, "Country Code", user.countrycode ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.phone, "Mobile", user.mobile ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.email_outlined, "Email", user.email ?? "N/A"),
                   const Divider(),
-                  _buildInfoRow(Icons.language, "Company Website", user.companywebsite ?? "N/A"),
+                  _buildInfoRow(Icons.language, "Company Website",
+                      user.companywebsite ?? "N/A"),
                   const Divider(),
-                  _buildInfoRow(Icons.location_history, "Business Location", user.businessLocation ?? "N/A"),
+                  _buildInfoRow(Icons.location_history, "Business Location",
+                      user.businessLocation ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.map, "Country", user.contry ?? "N/A"),
                   const Divider(),
@@ -334,25 +404,50 @@ class UserDetailView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: 200,
-              child: ElevatedButton(
-                onPressed: () {
-                  onRemove();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: onRemove,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    "Remove User",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
-                child: const Text(
-                  "Remove User",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    final updatedUser = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddUserForm(
+                          existingUser: user,
+                          onAddUser: (u) {
+                            if (onUpdate != null) onUpdate!(u);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    "Edit User",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 30),
           ],
@@ -381,10 +476,13 @@ class UserDetailView extends StatelessWidget {
   }
 }
 
+// ------------------ Add / Edit Form with Image Upload ------------------
 
 class AddUserForm extends StatefulWidget {
   final Function(Mynetwork) onAddUser;
-  const AddUserForm({super.key, required this.onAddUser});
+  final Mynetwork? existingUser;
+
+  const AddUserForm({super.key, required this.onAddUser, this.existingUser});
 
   @override
   State<AddUserForm> createState() => _AddUserFormState();
@@ -392,6 +490,7 @@ class AddUserForm extends StatefulWidget {
 
 class _AddUserFormState extends State<AddUserForm> {
   final _formKey = GlobalKey<FormState>();
+  File? selectedImage;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -404,6 +503,25 @@ class _AddUserFormState extends State<AddUserForm> {
   final TextEditingController countryCodeController = TextEditingController();
   final TextEditingController companynmae = TextEditingController();
   final TextEditingController aboutController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingUser != null) {
+      final u = widget.existingUser!;
+      nameController.text = u.username;
+      emailController.text = u.email ?? '';
+      designationController.text = u.Designnation;
+      mobileController.text = u.mobile ?? '';
+      companyWebSiteController.text = u.companywebsite ?? '';
+      businessLocationController.text = u.businessLocation ?? '';
+      countryController.text = u.contry ?? '';
+      cityController.text = u.city ?? '';
+      countryCodeController.text = u.countrycode ?? '';
+      companynmae.text = u.compayname ?? '';
+      aboutController.text = u.aboutme ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -421,43 +539,107 @@ class _AddUserFormState extends State<AddUserForm> {
     super.dispose();
   }
 
+  Future<void> pickImage() async {
+    final pickedFile =
+    await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String> uploadImage() async {
+    if (selectedImage == null) {
+      return widget.existingUser?.ImageUrl ??
+          'https://via.placeholder.com/150';
+    }
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child('userprofile/${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await storageRef.putFile(selectedImage!);
+    return await storageRef.getDownloadURL();
+  }
+
   Future<void> saveUser() async {
-    final docRef =
-    await FirebaseFirestore.instance.collection('userregister').add({
-      'name': nameController.text.trim(),
-      'email': emailController.text.trim(),
-      'designation': designationController.text.trim(),
-      'mobile': mobileController.text.trim(),
-      'companywebsite': companyWebSiteController.text.trim(),
-      'businessLocation': businessLocationController.text.trim(),
-      'country': countryController.text.trim(),
-      'city': cityController.text.trim(),
-      'countrycode': countryCodeController.text.trim(),
-      'aboutme': aboutController.text.trim(),
-      'companyname':companynmae.text.trim(),
-      'profileImage': 'https://via.placeholder.com/150',
-    });
+    final photoUrl = await uploadImage();
 
-    final newUser = Mynetwork(
-      id: docRef.id,
-      username: nameController.text.trim(),
-      Designnation: designationController.text.trim(),
-      ImageUrl: 'https://via.placeholder.com/150',
-      email: emailController.text.trim(),
-      mobile: mobileController.text.trim(),
-      companywebsite: companyWebSiteController.text.trim(),
-      businessLocation: businessLocationController.text.trim(),
-      contry: countryController.text.trim(),
-      city: cityController.text.trim(),
-      countrycode: countryCodeController.text.trim(),
-      aboutme: aboutController.text.trim(),
-      compayname: companynmae.text.trim()
-    );
+    if (widget.existingUser != null) {
+      // Update existing
+      await FirebaseFirestore.instance
+          .collection('userregister')
+          .doc(widget.existingUser!.id)
+          .update({
+        'name': nameController.text.trim(),
+        'email': emailController.text.trim(),
+        'designation': designationController.text.trim(),
+        'mobile': mobileController.text.trim(),
+        'companywebsite': companyWebSiteController.text.trim(),
+        'businessLocation': businessLocationController.text.trim(),
+        'country': countryController.text.trim(),
+        'city': cityController.text.trim(),
+        'countrycode': countryCodeController.text.trim(),
+        'aboutme': aboutController.text.trim(),
+        'companyname': companynmae.text.trim(),
+        'photoUrl': photoUrl,
+      });
+      final updatedUser = Mynetwork(
+        id: widget.existingUser!.id,
+        username: nameController.text.trim(),
+        Designnation: designationController.text.trim(),
+        ImageUrl: photoUrl,
+        email: emailController.text.trim(),
+        mobile: mobileController.text.trim(),
+        companywebsite: companyWebSiteController.text.trim(),
+        businessLocation: businessLocationController.text.trim(),
+        contry: countryController.text.trim(),
+        city: cityController.text.trim(),
+        countrycode: countryCodeController.text.trim(),
+        aboutme: aboutController.text.trim(),
+        compayname: companynmae.text.trim(),
+      );
+      widget.onAddUser(updatedUser);
+    } else {
+      // Add new
+      final docRef =
+      await FirebaseFirestore.instance.collection('userregister').add({
+        'name': nameController.text.trim(),
+        'email': emailController.text.trim(),
+        'designation': designationController.text.trim(),
+        'mobile': mobileController.text.trim(),
+        'companywebsite': companyWebSiteController.text.trim(),
+        'businessLocation': businessLocationController.text.trim(),
+        'country': countryController.text.trim(),
+        'city': cityController.text.trim(),
+        'countrycode': countryCodeController.text.trim(),
+        'aboutme': aboutController.text.trim(),
+        'companyname': companynmae.text.trim(),
+        'photoUrl': photoUrl,
+        'role': 'user', // default role
+      });
 
-    widget.onAddUser(newUser);
+      final newUser = Mynetwork(
+        id: docRef.id,
+        username: nameController.text.trim(),
+        Designnation: designationController.text.trim(),
+        ImageUrl: photoUrl,
+        email: emailController.text.trim(),
+        mobile: mobileController.text.trim(),
+        companywebsite: companyWebSiteController.text.trim(),
+        businessLocation: businessLocationController.text.trim(),
+        contry: countryController.text.trim(),
+        city: cityController.text.trim(),
+        countrycode: countryCodeController.text.trim(),
+        aboutme: aboutController.text.trim(),
+        compayname: companynmae.text.trim(),
+      );
+
+      widget.onAddUser(newUser);
+    }
+
     Navigator.pop(context);
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("User Added Successfully")));
+        .showSnackBar(const SnackBar(content: Text("User saved successfully")));
   }
 
   @override
@@ -465,7 +647,7 @@ class _AddUserFormState extends State<AddUserForm> {
     return Scaffold(
       backgroundColor: const Color(0xFFDCEAF4),
       appBar: AppBar(
-        title: const Text("Add User"),
+        title: Text(widget.existingUser != null ? "Edit User" : "Add User"),
         backgroundColor: const Color(0xFFDCEAF4),
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -482,51 +664,71 @@ class _AddUserFormState extends State<AddUserForm> {
               key: _formKey,
               child: SingleChildScrollView(
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("User Information",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 20),
-                      buildTextField("Full Name", nameController, Icons.person),
-                      buildTextField("Designation", designationController,
-                          Icons.work_outline),
-                      buildTextField("CompanyName", companynmae,
-                          Icons.home_work_outlined),
-                      buildTextField("Email", emailController, Icons.email,
-                          keyboardType: TextInputType.emailAddress),
-
-                      buildTextField("Mobile Number", mobileController,
-                          Icons.phone, keyboardType: TextInputType.phone),
-                      buildTextField("Company Website", companyWebSiteController, Icons.language,
-                          keyboardType: TextInputType.url),
-                      buildTextField("Business Location", businessLocationController, Icons.location_on),
-                      buildTextField("Country", countryController, Icons.flag),
-                      buildTextField("City", cityController, Icons.location_city),
-                      buildTextField("Country Code", countryCodeController, Icons.add),
-                      buildTextField("About Me", aboutController, Icons.info, maxLines: 3),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Appcolor.secondary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              saveUser();
-                            }
-                          },
-                          icon: const Icon(Icons.save),
-                          label: const Text("Save User",
-                              style: TextStyle(
-                                  fontSize: 16, color: Colors.white)),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("User Information",
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: pickImage,
+                      child: Center(
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: selectedImage != null
+                              ? FileImage(selectedImage!)
+                              : (widget.existingUser != null
+                              ? NetworkImage(widget.existingUser!.ImageUrl)
+                          as ImageProvider
+                              : const NetworkImage(
+                              'https://via.placeholder.com/150')),
                         ),
-                      )
-                    ]),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    buildTextField("Full Name", nameController, Icons.person),
+                    buildTextField("Designation", designationController,
+                        Icons.work_outline),
+                    buildTextField(
+                        "CompanyName", companynmae, Icons.home_work_outlined),
+                    buildTextField("Email", emailController, Icons.email,
+                        keyboardType: TextInputType.emailAddress),
+                    buildTextField("Mobile Number", mobileController, Icons.phone,
+                        keyboardType: TextInputType.phone),
+                    buildTextField("Company Website", companyWebSiteController,
+                        Icons.language,
+                        keyboardType: TextInputType.url),
+                    buildTextField("Business Location",
+                        businessLocationController, Icons.location_on),
+                    buildTextField("Country", countryController, Icons.flag),
+                    buildTextField("City", cityController, Icons.location_city),
+                    buildTextField(
+                        "Country Code", countryCodeController, Icons.add),
+                    buildTextField("About Me", aboutController, Icons.info,
+                        maxLines: 3),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Appcolor.secondary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            saveUser();
+                          }
+                        },
+                        icon: const Icon(Icons.save),
+                        label: const Text("Save User",
+                            style: TextStyle(
+                                fontSize: 16, color: Colors.white)),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           ),

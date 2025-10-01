@@ -73,7 +73,7 @@ class _ManagesponsorState extends State<Managesponsor> {
     }
   }
 
-  void removeSponsor(String id) async {
+  Future<void> removeSponsor(String id) async {
     try {
       await FirebaseFirestore.instance.collection('userregister').doc(id).delete();
       setState(() {
@@ -120,6 +120,24 @@ class _ManagesponsorState extends State<Managesponsor> {
     });
   }
 
+  Future<bool> showDeleteConfirmation() async {
+    return (await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: const Text("Are you sure you want to delete this sponsor?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    )) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,14 +178,16 @@ class _ManagesponsorState extends State<Managesponsor> {
               itemBuilder: (context, index) {
                 final sponsor = filteredSponsors[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   leading: CircleAvatar(
                     radius: 30,
                     backgroundImage: NetworkImage(sponsor.ImageUrl),
                   ),
                   title: Text(
                     sponsor.username,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     sponsor.industry ?? '',
@@ -191,28 +211,39 @@ class _ManagesponsorState extends State<Managesponsor> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text("Edit", style: TextStyle(color: Colors.white)),
+                        child: const Text("Edit",
+                            style: TextStyle(color: Colors.white)),
                       ),
                       const SizedBox(width: 6),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => SponsorDetailView(
                                 sponsor: sponsor,
-                                onRemove: () => removeSponsor(sponsor.id!),
+                                onRemove: () async {
+                                  final confirmed =
+                                  await showDeleteConfirmation();
+                                  if (confirmed) {
+                                    removeSponsor(sponsor.id!);
+                                    Navigator.pop(context);
+                                  }
+                                },
                               ),
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text("View", style: TextStyle(color: Colors.white)),
+                        child: const Text("View",
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
@@ -246,7 +277,27 @@ class SponsorDetailView extends StatelessWidget {
   final Mynetwork sponsor;
   final VoidCallback onRemove;
 
-  const SponsorDetailView({Key? key, required this.sponsor, required this.onRemove}) : super(key: key);
+  const SponsorDetailView({Key? key, required this.sponsor, required this.onRemove})
+      : super(key: key);
+
+  Future<bool> _showDeleteDialog(BuildContext context) async {
+    return (await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: const Text("Are you sure you want to delete this sponsor?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    )) ??
+        false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -294,10 +345,12 @@ class SponsorDetailView extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(sponsor.username,
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                            style: const TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
                         Text(sponsor.Designnation,
-                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+                            style: const TextStyle(
+                                fontSize: 16, fontStyle: FontStyle.italic)),
                       ],
                     ),
                   ),
@@ -306,7 +359,8 @@ class SponsorDetailView extends StatelessWidget {
                     width: double.infinity,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                    decoration:
+                    BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       children: [
                         _detailRow("Name", sponsor.username),
@@ -322,16 +376,20 @@ class SponsorDetailView extends StatelessWidget {
                         _detailRow("Category", sponsor.industry ?? ""),
                         _detailRow("Other Info", sponsor.otherinfo ?? ""),
                         const SizedBox(height: 12),
-                        // Website + Social links are pulled from firestore in case the model doesn't contain them
                         FutureBuilder<DocumentSnapshot>(
-                          future: FirebaseFirestore.instance.collection('userregister').doc(sponsor.id).get(),
+                          future: FirebaseFirestore.instance
+                              .collection('userregister')
+                              .doc(sponsor.id)
+                              .get(),
                           builder: (context, snap) {
-                            if (snap.connectionState != ConnectionState.done) return const SizedBox();
+                            if (snap.connectionState != ConnectionState.done)
+                              return const SizedBox();
                             if (!snap.hasData || !(snap.data!.data() is Map<String, dynamic>)) {
                               return const SizedBox();
                             }
                             final data = snap.data!.data() as Map<String, dynamic>;
-                            final website = (data['companywebsite'] ?? sponsor.companywebsite ?? '') as String;
+                            final website = (data['companywebsite'] ?? sponsor.companywebsite ?? '')
+                            as String;
                             final social = (data['socialLinks'] ?? {}) as Map<String, dynamic>;
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,7 +406,8 @@ class SponsorDetailView extends StatelessWidget {
                                 ],
                                 const SizedBox(height: 12),
                                 if (social.isNotEmpty) ...[
-                                  const Text("Social Links", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text("Social Links",
+                                      style: TextStyle(fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 8),
                                   for (final entry in social.entries)
                                     if ((entry.value as String).isNotEmpty)
@@ -374,12 +433,15 @@ class SponsorDetailView extends StatelessWidget {
                   SizedBox(
                     width: 200,
                     child: ElevatedButton(
-                      onPressed: () {
-                        onRemove();
-                        Navigator.pop(context);
+                      onPressed: () async {
+                        final confirmed = await _showDeleteDialog(context);
+                        if (confirmed) {
+                          onRemove();
+                        }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text("Remove Sponsor", style: TextStyle(color: Colors.white)),
+                      child:
+                      const Text("Remove Sponsor", style: TextStyle(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -398,7 +460,9 @@ class SponsorDetailView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         children: [
-          SizedBox(width: 120, child: Text("$title:", style: const TextStyle(fontWeight: FontWeight.bold))),
+          SizedBox(
+              width: 120,
+              child: Text("$title:", style: const TextStyle(fontWeight: FontWeight.bold))),
           Expanded(child: Text(value)),
         ],
       ),
@@ -422,6 +486,9 @@ class SponsorDetailView extends StatelessWidget {
     }
   }
 }
+
+// -------------------- Add/Edit Sponsor Form --------------------
+// ... Keep your AddSponsorForm code unchanged (already handles city & social links)
 
 // -------------------- Add/Edit Sponsor Form --------------------
 class AddSponsorForm extends StatefulWidget {

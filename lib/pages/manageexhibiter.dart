@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:peersglobaladmin/colors/colorfile.dart';
 import 'package:peersglobaladmin/modelclass/mynetwork_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Manageexhibiter extends StatefulWidget {
   const Manageexhibiter({super.key});
@@ -20,7 +21,6 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
   List<Mynetwork> exhibitors = [];
   List<Mynetwork> filteredExhibitors = [];
   final TextEditingController searchController = TextEditingController();
-
 
   @override
   void initState() {
@@ -57,6 +57,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
           contry: data['country'] ?? '',
           city: data['city'] ?? '',
           aboutme: data['aboutme'] ?? '',
+          socialLinks: List<String>.from(data['socialLinks'] ?? []),
         );
       }).toList();
 
@@ -69,6 +70,30 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
       print("Error fetching exhibitors: $e");
       setState(() => isLoading = false);
     }
+  }
+
+  void removeExhibitorWithAlert(Mynetwork exhibitor) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: Text("Are you sure you want to delete ${exhibitor.username}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              removeExhibitor(exhibitor.id!);
+            },
+            child: const Text("Delete"),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
   }
 
   void removeExhibitor(String exhibitorId) async {
@@ -179,7 +204,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
                         MaterialPageRoute(
                           builder: (_) => ExhibiterDetailView(
                             exhibiter: exhibitor,
-                            onRemove: () => removeExhibitor(exhibitor.id!),
+                            onRemove: () => removeExhibitorWithAlert(exhibitor),
                             onEdit: addExhibitorToList,
                           ),
                         ),
@@ -243,13 +268,13 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   final TextEditingController businessLocationController = TextEditingController();
   final TextEditingController aboutMeController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController roleController = TextEditingController();
   final TextEditingController facebookController = TextEditingController();
   final TextEditingController twitterController = TextEditingController();
   final TextEditingController linkedinController = TextEditingController();
   final TextEditingController instagramController = TextEditingController();
-
 
   File? _imageFile;
   Uint8List? webImage;
@@ -267,6 +292,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
       businessLocationController.text = ex.businessLocation ?? '';
       aboutMeController.text = ex.aboutme ?? '';
       countryController.text = ex.contry ?? '';
+      cityController.text = ex.city ?? '';
       mobileController.text = ex.mobile ?? '';
       roleController.text = ex.Designnation;
 
@@ -335,6 +361,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'businessLocation': businessLocationController.text.trim(),
           'aboutme': aboutMeController.text.trim(),
           'country': countryController.text.trim(),
+          'city': cityController.text.trim(),
           'mobile': mobileController.text.trim(),
           'role': roleController.text.trim(),
           'profileImage': imageUrl,
@@ -354,7 +381,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           companywebsite: websiteController.text.trim(),
           industry: widget.exhibiter!.industry,
           contry: countryController.text.trim(),
-          city: widget.exhibiter!.city,
+          city: cityController.text.trim(),
           aboutme: aboutMeController.text.trim(),
           socialLinks: socialLinks,
         );
@@ -371,12 +398,12 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'businessLocation': businessLocationController.text.trim(),
           'aboutme': aboutMeController.text.trim(),
           'country': countryController.text.trim(),
+          'city': cityController.text.trim(),
           'mobile': mobileController.text.trim(),
           'role': roleController.text.trim(),
           'profileImage': imageUrl ?? 'https://via.placeholder.com/150',
           'designation': roleController.text.trim(),
           'industry': '',
-          'city': '',
           'socialLinks': socialLinks,
         });
 
@@ -392,7 +419,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           companywebsite: websiteController.text.trim(),
           industry: '',
           contry: countryController.text.trim(),
-          city: '',
+          city: cityController.text.trim(),
           aboutme: aboutMeController.text.trim(),
           socialLinks: socialLinks,
         );
@@ -485,6 +512,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
                   buildTextField("Business Location", businessLocationController, Icons.location_on),
                   buildTextField("About Me", aboutMeController, Icons.info, maxLines: 3),
                   buildTextField("Country", countryController, Icons.flag_outlined),
+                  buildTextField("City", cityController, Icons.location_city),
                   buildTextField("Mobile Number", mobileController, Icons.phone_iphone, keyboardType: TextInputType.phone),
                   buildTextField("Role", roleController, Icons.work_outline),
                   buildTextField("Facebook", facebookController, Icons.facebook),
@@ -518,7 +546,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   }
 }
 
-// ---------------- Detail View with Edit ----------------
+// ---------------- Detail View with Social Media ----------------
 
 class ExhibiterDetailView extends StatelessWidget {
   final Mynetwork exhibiter;
@@ -537,6 +565,33 @@ class ExhibiterDetailView extends StatelessWidget {
         ),
         const Divider(thickness: 1, indent: 16, endIndent: 16),
       ],
+    );
+  }
+
+  Widget buildSocialIconsRow(List<String>? socialLinks) {
+    if (socialLinks == null || socialLinks.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: socialLinks.map((link) {
+          IconData icon;
+          if (link.contains("facebook")) icon = Icons.facebook;
+          else if (link.contains("twitter")) icon = Icons.travel_explore;
+          else if (link.contains("linkedin")) icon = Icons.link;
+          else if (link.contains("instagram")) icon = Icons.camera_alt;
+          else return const SizedBox.shrink();
+
+          return IconButton(
+            icon: Icon(icon, color: Colors.blue),
+            onPressed: () async {
+              if (await canLaunchUrl(Uri.parse(link))) {
+                await launchUrl(Uri.parse(link));
+              }
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -592,6 +647,7 @@ class ExhibiterDetailView extends StatelessWidget {
             buildInfoRow(Icons.flag_outlined, "Country", exhibiter.contry ?? ''),
             buildInfoRow(Icons.location_city, "City", exhibiter.city ?? ''),
             buildInfoRow(Icons.phone_iphone, "Mobile", exhibiter.mobile ?? ''),
+            buildSocialIconsRow(exhibiter.socialLinks),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

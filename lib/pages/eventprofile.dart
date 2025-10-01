@@ -218,7 +218,7 @@ class _EventprofileState extends State<Eventprofile> {
                       minimumSize: Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(_editingDocId == null ? 'Add Event' : 'Update Event'),
+                    child: Text(_editingDocId == null ? ' Save Event' : 'Update Event'),
                   ),
                   SizedBox(height: 24),
                 ],
