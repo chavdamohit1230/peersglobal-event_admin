@@ -40,22 +40,24 @@ class _ManageuserState extends State<Manageuser> {
         final data = doc.data();
         return Mynetwork(
           id: doc.id,
-          username: data['name'] ?? '',
-          Designnation: data['designation'] ?? '',
+          username: data['name'] ?? 'N/A',
+          Designnation: data['designation'] ?? 'N/A',
           ImageUrl: data['photoUrl'] ??
               'https://via.placeholder.com/150', // updated field
-          email: data['email'] ?? '',
-          mobile: data['mobile'] ?? '',
-          organization: data['organization'] ?? '',
-          businessLocation: data['businessLocation'] ?? '',
-          companywebsite: data['companywebsite'] ?? '',
-          industry: data['industry'] ?? '',
-          contry: data['country'] ?? '',
-          city: data['city'] ?? '',
-          aboutme: data['aboutme'] ?? '',
-          countrycode: data['countrycode'] ?? '',
-          compayname: data['companyname'] ?? '',
-          role: data['role'] ?? 'user', // default role as normal user
+          email: data['email'] ?? 'N/A',
+          mobile: data['mobile'] ?? 'N/A',
+          organization: data['organization'] ?? 'N/A',
+          businessLocation: data['businessLocation'] ?? 'N/A',
+          companywebsite: data['companywebsite'] ?? 'N/A',
+          industry: data['industry'] ?? 'N/A',
+          contry: data['country'] ?? 'N/A',
+          city: data['city'] ?? 'N/A',
+          aboutme: data['aboutme'] ?? 'N/A',
+          countrycode: data['countrycode'] ?? 'N/A',
+          compayname: data['companyname'] ?? 'N/A',
+          role: data['role'] ?? 'user',
+          category: data['category'] ?? 'N/A',
+
         );
       }).toList();
 
@@ -382,18 +384,21 @@ class UserDetailView extends StatelessWidget {
                   _buildInfoRow(Icons.work_outline, "CompanyName ",
                       user.compayname ?? "N/A "),
                   const Divider(),
-                  _buildInfoRow(
-                      Icons.flag, "Country Code", user.countrycode ?? "N/A"),
+                  _buildInfoRow(Icons.category_sharp, "Category",
+                      user.category ?? "N/A "),
                   const Divider(),
                   _buildInfoRow(Icons.phone, "Mobile", user.mobile ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.email_outlined, "Email", user.email ?? "N/A"),
                   const Divider(),
-                  _buildInfoRow(Icons.language, "Company Website",
+                  _buildInfoRow(Icons.language, "Website",
                       user.companywebsite ?? "N/A"),
                   const Divider(),
-                  _buildInfoRow(Icons.location_history, "Business Location",
+                  _buildInfoRow(Icons.location_history, "Business Address",
                       user.businessLocation ?? "N/A"),
+                  const Divider(),
+                  _buildInfoRow(
+                      Icons.flag, "Country Code", user.countrycode ?? "N/A"),
                   const Divider(),
                   _buildInfoRow(Icons.map, "Country", user.contry ?? "N/A"),
                   const Divider(),
@@ -503,6 +508,7 @@ class _AddUserFormState extends State<AddUserForm> {
   final TextEditingController countryCodeController = TextEditingController();
   final TextEditingController companynmae = TextEditingController();
   final TextEditingController aboutController = TextEditingController();
+  final TextEditingController category = TextEditingController();
 
   @override
   void initState() {
@@ -510,16 +516,17 @@ class _AddUserFormState extends State<AddUserForm> {
     if (widget.existingUser != null) {
       final u = widget.existingUser!;
       nameController.text = u.username;
-      emailController.text = u.email ?? '';
+      emailController.text = u.email ?? 'N/A';
       designationController.text = u.Designnation;
-      mobileController.text = u.mobile ?? '';
-      companyWebSiteController.text = u.companywebsite ?? '';
-      businessLocationController.text = u.businessLocation ?? '';
-      countryController.text = u.contry ?? '';
-      cityController.text = u.city ?? '';
-      countryCodeController.text = u.countrycode ?? '';
-      companynmae.text = u.compayname ?? '';
-      aboutController.text = u.aboutme ?? '';
+      mobileController.text = u.mobile ?? 'N/A';
+      companyWebSiteController.text = u.companywebsite ?? 'N/A';
+      businessLocationController.text = u.businessLocation ?? 'N/A';
+      countryController.text = u.contry ?? 'N/A';
+      cityController.text = u.city ?? 'N/A';
+      countryCodeController.text = u.countrycode ?? 'N/A';
+      companynmae.text = u.compayname ?? 'N/A';
+      aboutController.text = u.aboutme ?? 'N/A';
+      category.text = u.category ?? 'N/A';
     }
   }
 
@@ -536,6 +543,7 @@ class _AddUserFormState extends State<AddUserForm> {
     countryCodeController.dispose();
     aboutController.dispose();
     companynmae.dispose();
+    category.dispose();
     super.dispose();
   }
 
@@ -582,6 +590,7 @@ class _AddUserFormState extends State<AddUserForm> {
         'aboutme': aboutController.text.trim(),
         'companyname': companynmae.text.trim(),
         'photoUrl': photoUrl,
+        'category':category.text.trim()
       });
       final updatedUser = Mynetwork(
         id: widget.existingUser!.id,
@@ -597,6 +606,7 @@ class _AddUserFormState extends State<AddUserForm> {
         countrycode: countryCodeController.text.trim(),
         aboutme: aboutController.text.trim(),
         compayname: companynmae.text.trim(),
+        category: category.text.trim()
       );
       widget.onAddUser(updatedUser);
     } else {
@@ -616,6 +626,7 @@ class _AddUserFormState extends State<AddUserForm> {
         'companyname': companynmae.text.trim(),
         'photoUrl': photoUrl,
         'role': 'user', // default role
+        'category':category.text.trim()
       });
 
       final newUser = Mynetwork(
@@ -632,6 +643,7 @@ class _AddUserFormState extends State<AddUserForm> {
         countrycode: countryCodeController.text.trim(),
         aboutme: aboutController.text.trim(),
         compayname: companynmae.text.trim(),
+        category: category.text.trim(),
       );
 
       widget.onAddUser(newUser);
@@ -691,14 +703,15 @@ class _AddUserFormState extends State<AddUserForm> {
                         Icons.work_outline),
                     buildTextField(
                         "CompanyName", companynmae, Icons.home_work_outlined),
-                    buildTextField("Email", emailController, Icons.email,
-                        keyboardType: TextInputType.emailAddress),
+                    buildTextField('category', category, Icons.category_rounded,keyboardType:TextInputType.text),
                     buildTextField("Mobile Number", mobileController, Icons.phone,
                         keyboardType: TextInputType.phone),
-                    buildTextField("Company Website", companyWebSiteController,
+                    buildTextField("Email", emailController, Icons.email,
+                        keyboardType: TextInputType.emailAddress),
+                    buildTextField("Website", companyWebSiteController,
                         Icons.language,
                         keyboardType: TextInputType.url),
-                    buildTextField("Business Location",
+                    buildTextField("Business Address",
                         businessLocationController, Icons.location_on),
                     buildTextField("Country", countryController, Icons.flag),
                     buildTextField("City", cityController, Icons.location_city),

@@ -364,17 +364,19 @@ class SponsorDetailView extends StatelessWidget {
                     child: Column(
                       children: [
                         _detailRow("Name", sponsor.username),
-                        _detailRow("Designation", sponsor.Designnation),
-                        _detailRow("Email", sponsor.email ?? ""),
-                        _detailRow("Mobile", sponsor.mobile ?? ""),
-                        _detailRow("Role", sponsor.role ?? ""),
-                        _detailRow("Brand Name", sponsor.brandname ?? ""),
-                        _detailRow("Business Location", sponsor.businessLocation ?? ""),
                         _detailRow("Organization", sponsor.organization ?? ""),
+                        _detailRow("Mobile", sponsor.mobile ?? ""),
+                        _detailRow("Email", sponsor.email ?? ""),
+                        _detailRow("Business Address", sponsor.businessLocation ?? ""),
+                        _detailRow("Country", sponsor.contry?? ""),
                         _detailRow("City", sponsor.city ?? ""),
-                        _detailRow("Country Code", sponsor.countrycode ?? ""),
-                        _detailRow("Category", sponsor.industry ?? ""),
-                        _detailRow("Other Info", sponsor.otherinfo ?? ""),
+
+                        // _detailRow("Brand Name", sponsor.brandname ?? ""),
+                        // _detailRow("Designation", sponsor.Designnation),
+                        // _detailRow('mobile',sponsor.mobile?? ""),
+                        _detailRow("Role", sponsor.role ?? ""),
+                        // _detailRow("Category", sponsor.industry ?? ""),
+                        _detailRow("About", sponsor.otherinfo ?? ""),
                         const SizedBox(height: 12),
                         FutureBuilder<DocumentSnapshot>(
                           future: FirebaseFirestore.instance
@@ -516,6 +518,8 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
   final TextEditingController cityController = TextEditingController();
   final TextEditingController websiteController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
+  final TextEditingController country = TextEditingController();
+  final TextEditingController mobile =TextEditingController();
 
   // Social media controllers
   final TextEditingController facebookController = TextEditingController();
@@ -544,6 +548,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
       cityController.text = s.city ?? '';
       websiteController.text = s.companywebsite ?? '';
       categoryController.text = s.industry ?? '';
+      mobile.text = s.mobile ?? '';
       // Try to prefill social links from firestore doc (if present)
       if (s.id != null) {
         FirebaseFirestore.instance.collection('userregister').doc(s.id).get().then((doc) {
@@ -581,6 +586,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
     linkedinController.dispose();
     twitterController.dispose();
     youtubeController.dispose();
+    mobile.dispose();
     super.dispose();
   }
 
@@ -626,9 +632,11 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         "city": cityController.text.trim(),
         "companywebsite": websiteController.text.trim(),
         "role": "sponsor",
+        "country":country.text.trim(),
         "sponsorType": categoryController.text.trim(),
         "socialLinks": socialLinks,
         "photoUrl": imageUrl ?? "https://via.placeholder.com/150",
+        "mobile":mobile.text.trim()
       });
 
       final newSponsor = Mynetwork(
@@ -641,7 +649,9 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         otherinfo: otherInfoController.text.trim(),
         countrycode: countryCodeController.text.trim(),
         city: cityController.text.trim(),
+        mobile:mobile.text.trim(),
         role: "sponsor",
+        contry:country.text.trim(),
         companywebsite: websiteController.text.trim(),
         industry: categoryController.text.trim(),
         ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
@@ -665,7 +675,9 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         "companywebsite": websiteController.text.trim(),
         "sponsorType": categoryController.text.trim(),
         "socialLinks": socialLinks,
+        "mobile":mobile.text.trim(),
         "photoUrl": imageUrl ?? s.ImageUrl,
+        "country":country.text.trim()
       });
 
       final updatedSponsor = Mynetwork(
@@ -682,6 +694,8 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         companywebsite: websiteController.text.trim(),
         industry: categoryController.text.trim(),
         ImageUrl: imageUrl ?? s.ImageUrl,
+        mobile: mobile.text.trim(),
+        contry: country.text.trim()
       );
 
       widget.onEditSponsor?.call(updatedSponsor);
@@ -737,17 +751,14 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
                         ),
                         const SizedBox(height: 20),
                         buildTextField("Full Name", nameController, Icons.person),
-                        buildTextField("Email", emailController, Icons.email, keyboardType: TextInputType.emailAddress),
-                        buildTextField("Designation", designationController, Icons.work_outline),
                         buildTextField("Organization", organizationController, Icons.business),
-                        buildTextField("Business Location", businessLocationController, Icons.location_on),
-                        buildTextField("City", cityController, Icons.location_city),
-                        buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
-                        buildTextField("Website", websiteController, Icons.language),
-                        buildTextField("Other Info", otherInfoController, Icons.notes_outlined, maxLines: 3),
                         buildTextField("Country Code", countryCodeController, Icons.phone_android),
-                        const SizedBox(height: 20),
-                        buildTextField("Category", categoryController, Icons.category),
+                        buildTextField("mobile", mobile, Icons.call, keyboardType: TextInputType.phone),
+                        buildTextField("Email", emailController, Icons.email, keyboardType: TextInputType.emailAddress),
+                        buildTextField("Website", websiteController, Icons.language),
+                        buildTextField("Business Address", businessLocationController, Icons.location_on),
+                        buildTextField("Country", country, Icons.location_city_outlined),
+                        buildTextField("City", cityController, Icons.location_city),
                         const Divider(height: 40),
                         const Text("Social Media Links",
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -757,6 +768,12 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
                         buildTextField("Twitter", twitterController, Icons.alternate_email),
                         buildTextField("YouTube", youtubeController, Icons.video_library),
                         const SizedBox(height: 30),
+                        // buildTextField("Designation", designationController, Icons.work_outline),
+                        // buildTextField("Brand Name", brandNameController, Icons.shopping_bag_outlined),
+                        buildTextField("About", otherInfoController, Icons.notes_outlined, maxLines: 3),
+                        const SizedBox(height: 20),
+                        // buildTextField("Category", categoryController, Icons.category),
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
