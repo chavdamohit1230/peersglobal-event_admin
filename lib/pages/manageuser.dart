@@ -42,7 +42,7 @@ class _ManageuserState extends State<Manageuser> {
           id: doc.id,
           username: data['name'] ?? 'N/A',
           Designnation: data['designation'] ?? 'N/A',
-          ImageUrl: data['photoUrl'] ??
+          photoUrl: data['photoUrl'] ??
               'https://via.placeholder.com/150', // updated field
           email: data['email'] ?? 'N/A',
           mobile: data['mobile'] ?? 'N/A',
@@ -229,7 +229,7 @@ class _ManageuserState extends State<Manageuser> {
                       vertical: 12, horizontal: 16),
                   leading: CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage(user.ImageUrl),
+                    backgroundImage: NetworkImage(user.photoUrl),
                   ),
                   title: Text(
                     user.username,
@@ -348,7 +348,7 @@ class UserDetailView extends StatelessWidget {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.white,
-                    backgroundImage: NetworkImage(user.ImageUrl),
+                    backgroundImage: NetworkImage(user.photoUrl),
                   ),
                   const SizedBox(height: 12),
                   Text(user.username,
@@ -559,7 +559,7 @@ class _AddUserFormState extends State<AddUserForm> {
 
   Future<String> uploadImage() async {
     if (selectedImage == null) {
-      return widget.existingUser?.ImageUrl ??
+      return widget.existingUser?.photoUrl ??
           'https://via.placeholder.com/150';
     }
     final storageRef = FirebaseStorage.instance
@@ -596,7 +596,7 @@ class _AddUserFormState extends State<AddUserForm> {
         id: widget.existingUser!.id,
         username: nameController.text.trim(),
         Designnation: designationController.text.trim(),
-        ImageUrl: photoUrl,
+          photoUrl: photoUrl,
         email: emailController.text.trim(),
         mobile: mobileController.text.trim(),
         companywebsite: companyWebSiteController.text.trim(),
@@ -633,7 +633,7 @@ class _AddUserFormState extends State<AddUserForm> {
         id: docRef.id,
         username: nameController.text.trim(),
         Designnation: designationController.text.trim(),
-        ImageUrl: photoUrl,
+        photoUrl: photoUrl,
         email: emailController.text.trim(),
         mobile: mobileController.text.trim(),
         companywebsite: companyWebSiteController.text.trim(),
@@ -690,7 +690,7 @@ class _AddUserFormState extends State<AddUserForm> {
                           backgroundImage: selectedImage != null
                               ? FileImage(selectedImage!)
                               : (widget.existingUser != null
-                              ? NetworkImage(widget.existingUser!.ImageUrl)
+                              ? NetworkImage(widget.existingUser!.photoUrl)
                           as ImageProvider
                               : const NetworkImage(
                               'https://via.placeholder.com/150')),

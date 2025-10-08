@@ -47,7 +47,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
           id: doc.id,
           username: data['name'] ?? 'N/A',
           Designnation: data['designation'] ?? 'N/A',
-          ImageUrl: data['profileImage'] ?? 'https://via.placeholder.com/150',
+          photoUrl: data['photoUrl'] ?? 'https://via.placeholder.com/150',
           email: data['email'] ?? 'N/A',
           mobile: data['mobile'] ?? 'N/A',
           organization: data['organization'] ?? 'N/A',
@@ -72,31 +72,9 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
     }
   }
 
-  void removeExhibitorWithAlert(Mynetwork exhibitor) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirm Delete"),
-        content: Text("Are you sure you want to delete ${exhibitor.username}?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              removeExhibitor(exhibitor.id!);
-            },
-            child: const Text("Delete"),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void removeExhibitor(String exhibitorId) async {
+  // --- CHANGED ---
+  // The function now returns a Future<void> so we can await it.
+  Future<void> removeExhibitor(String exhibitorId) async {
     try {
       await FirebaseFirestore.instance
           .collection('userregister')
@@ -107,9 +85,49 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
         exhibitors.removeWhere((e) => e.id == exhibitorId);
         filteredExhibitors.removeWhere((e) => e.id == exhibitorId);
       });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Exhibitor deleted successfully.")));
     } catch (e) {
       print("Error removing exhibitor: $e");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error deleting exhibitor: $e")));
+      // Re-throw the error to be caught by the caller if needed.
+      rethrow;
     }
+  }
+
+  // --- CHANGED ---
+  // The function now handles the navigation back to the main list.
+  void removeExhibitorWithAlert(Mynetwork exhibitor) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: Text("Are you sure you want to delete ${exhibitor.username}? This action is irreversible."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Pops the AlertDialog
+              try {
+                await removeExhibitor(exhibitor.id!);
+                // Pops the ExhibiterDetailView screen
+                Navigator.pop(context);
+              } catch (e) {
+                // The error is already handled by removeExhibitor,
+                // so we don't need to do anything here other than
+                // the pop.
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
   }
 
   void addExhibitorToList(Mynetwork exhibitor) {
@@ -120,7 +138,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
       } else {
         exhibitors.add(exhibitor);
       }
-      filteredExhibitors = exhibitors;
+      filterSearch(searchController.text);
     });
   }
 
@@ -186,7 +204,7 @@ class _ManageexhibiterState extends State<Manageexhibiter> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   leading: CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage(exhibitor.ImageUrl),
+                    backgroundImage: NetworkImage(exhibitor.photoUrl),
                   ),
                   title: Text(
                     exhibitor.username,
@@ -272,7 +290,6 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController roleController = TextEditingController();
   final TextEditingController facebookController = TextEditingController();
-  final TextEditingController twitterController = TextEditingController();
   final TextEditingController linkedinController = TextEditingController();
   final TextEditingController instagramController = TextEditingController();
 
@@ -298,9 +315,6 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
 
       facebookController.text = ex.socialLinks?.firstWhere(
               (e) => e.contains("facebook"),
-          orElse: () => "") ?? '';
-      twitterController.text = ex.socialLinks?.firstWhere(
-              (e) => e.contains("twitter"),
           orElse: () => "") ?? '';
       linkedinController.text = ex.socialLinks?.firstWhere(
               (e) => e.contains("linkedin"),
@@ -329,7 +343,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
     setState(() => _isLoading = true);
 
     try {
-      String? imageUrl = widget.exhibiter?.ImageUrl;
+      String? imageUrl = widget.exhibiter?.photoUrl;
 
       if (_imageFile != null || webImage != null) {
         final storageRef =
@@ -346,7 +360,6 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
 
       List<String> socialLinks = [
         facebookController.text.trim(),
-        twitterController.text.trim(),
         linkedinController.text.trim(),
         instagramController.text.trim(),
       ].where((e) => e.isNotEmpty).toList();
@@ -364,7 +377,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'city': cityController.text.trim(),
           'mobile': mobileController.text.trim(),
           'role': roleController.text.trim(),
-          'profileImage': imageUrl,
+          'photoUrl': imageUrl,
           'designation': roleController.text.trim(),
           'socialLinks': socialLinks,
         });
@@ -373,7 +386,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           id: widget.exhibiter!.id,
           username: nameController.text.trim(),
           Designnation: roleController.text.trim(),
-          ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
+          photoUrl: imageUrl ?? 'https://via.placeholder.com/150',
           email: emailController.text.trim(),
           mobile: mobileController.text.trim(),
           organization: organizationController.text.trim(),
@@ -401,7 +414,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           'city': cityController.text.trim(),
           'mobile': mobileController.text.trim(),
           'role': roleController.text.trim(),
-          'profileImage': imageUrl ?? 'https://via.placeholder.com/150',
+          'photoUrl': imageUrl ?? 'https://via.placeholder.com/150',
           'designation': roleController.text.trim(),
           'industry': '',
           'socialLinks': socialLinks,
@@ -411,7 +424,7 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
           id: docRef.id,
           username: nameController.text.trim(),
           Designnation: roleController.text.trim(),
-          ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
+          photoUrl: imageUrl ?? 'https://via.placeholder.com/150',
           email: emailController.text.trim(),
           mobile: mobileController.text.trim(),
           organization: organizationController.text.trim(),
@@ -495,10 +508,10 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
                       backgroundImage: kIsWeb
                           ? (webImage != null
                           ? MemoryImage(webImage!) as ImageProvider
-                          : NetworkImage(widget.exhibiter?.ImageUrl ?? 'https://via.placeholder.com/150'))
+                          : NetworkImage(widget.exhibiter?.photoUrl ?? 'https://via.placeholder.com/150'))
                           : (_imageFile != null
                           ? FileImage(_imageFile!) as ImageProvider
-                          : NetworkImage(widget.exhibiter?.ImageUrl ?? 'https://via.placeholder.com/150')),
+                          : NetworkImage(widget.exhibiter?.photoUrl ?? 'https://via.placeholder.com/150')),
                       child: (_imageFile == null && webImage == null)
                           ? const Icon(Icons.add_a_photo, size: 40)
                           : null,
@@ -514,7 +527,6 @@ class _AddExhibiterFormState extends State<AddExhibiterForm> {
                   buildTextField("Country", countryController, Icons.flag_outlined),
                   buildTextField("City", cityController, Icons.location_city),
                   buildTextField("Facebook", facebookController, Icons.facebook),
-                  buildTextField("Twitter", twitterController, Icons.travel_explore),
                   buildTextField("LinkedIn", linkedinController, Icons.link),
                   buildTextField("Instagram", instagramController, Icons.camera_alt),
                   buildTextField("Role", roleController, Icons.work_outline),
@@ -578,7 +590,6 @@ class ExhibiterDetailView extends StatelessWidget {
         children: socialLinks.map((link) {
           IconData icon;
           if (link.contains("facebook")) icon = Icons.facebook;
-          else if (link.contains("twitter")) icon = Icons.travel_explore;
           else if (link.contains("linkedin")) icon = Icons.link;
           else if (link.contains("instagram")) icon = Icons.camera_alt;
           else return const SizedBox.shrink();
@@ -624,7 +635,7 @@ class ExhibiterDetailView extends StatelessWidget {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.white,
-                    backgroundImage: NetworkImage(exhibiter.ImageUrl),
+                    backgroundImage: NetworkImage(exhibiter.photoUrl),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -657,10 +668,9 @@ class ExhibiterDetailView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        onRemove();
-                        Navigator.pop(context);
-                      },
+                      // --- CHANGED ---
+                      // Now just calls the onRemove callback.
+                      onPressed: onRemove,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 16),

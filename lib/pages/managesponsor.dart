@@ -45,7 +45,7 @@ class _ManagesponsorState extends State<Managesponsor> {
           id: doc.id,
           username: data['name'] ?? '',
           Designnation: data['designation'] ?? '',
-          ImageUrl: data['photoUrl'] ?? 'https://via.placeholder.com/150',
+          photoUrl: data['photoUrl'] ?? 'https://via.placeholder.com/150',
           email: data['email'] ?? '',
           mobile: data['mobile'] ?? '',
           organization: data['organization'] ?? '',
@@ -182,7 +182,7 @@ class _ManagesponsorState extends State<Managesponsor> {
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   leading: CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage(sponsor.ImageUrl),
+                    backgroundImage: NetworkImage(sponsor.photoUrl),
                   ),
                   title: Text(
                     sponsor.username,
@@ -341,7 +341,7 @@ class SponsorDetailView extends StatelessWidget {
                         CircleAvatar(
                           radius: 60,
                           backgroundColor: Colors.white,
-                          backgroundImage: NetworkImage(sponsor.ImageUrl),
+                          backgroundImage: NetworkImage(sponsor.photoUrl),
                         ),
                         const SizedBox(height: 12),
                         Text(sponsor.username,
@@ -654,7 +654,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         contry:country.text.trim(),
         companywebsite: websiteController.text.trim(),
         industry: categoryController.text.trim(),
-        ImageUrl: imageUrl ?? 'https://via.placeholder.com/150',
+        photoUrl: imageUrl ?? 'https://via.placeholder.com/150',
       );
 
       widget.onAddSponsor?.call(newSponsor);
@@ -676,7 +676,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         "sponsorType": categoryController.text.trim(),
         "socialLinks": socialLinks,
         "mobile":mobile.text.trim(),
-        "photoUrl": imageUrl ?? s.ImageUrl,
+        "photoUrl": imageUrl ?? s.photoUrl,
         "country":country.text.trim()
       });
 
@@ -693,7 +693,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
         role: s.role,
         companywebsite: websiteController.text.trim(),
         industry: categoryController.text.trim(),
-        ImageUrl: imageUrl ?? s.ImageUrl,
+          photoUrl: imageUrl ?? s.photoUrl,
         mobile: mobile.text.trim(),
         contry: country.text.trim()
       );
@@ -741,7 +741,7 @@ class _AddSponsorFormState extends State<AddSponsorForm> {
                               backgroundImage: _selectedImage != null
                                   ? FileImage(_selectedImage!)
                                   : (widget.sponsor != null
-                                  ? NetworkImage(widget.sponsor!.ImageUrl)
+                                  ? NetworkImage(widget.sponsor!.photoUrl)
                                   : const NetworkImage("https://via.placeholder.com/150")) as ImageProvider,
                               child: _selectedImage == null && widget.sponsor == null
                                   ? const Icon(Icons.camera_alt, size: 30, color: Colors.white70)
