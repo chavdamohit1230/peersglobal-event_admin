@@ -86,7 +86,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   context.push('/timeline');
                 }),
                 _buildDashboardCard("Announcements", Icons.notifications_active, Colors.redAccent, () {
-                  context.push('/announcements');
+                  context.push('/annoucement');
                 }),
                 _buildDashboardCard("Ticketing", Icons.confirmation_num, Colors.amber, () {
                   context.push('/ticketing');

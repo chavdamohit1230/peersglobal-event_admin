@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:peersglobaladmin/pages/admin_home_screen.dart';
 import 'package:peersglobaladmin/pages/admin_splashscreen.dart';
 import 'package:peersglobaladmin/pages/adminlogin.dart';
+import 'package:peersglobaladmin/pages/announcement.dart';
 import 'package:peersglobaladmin/pages/eventprofile.dart';
 import 'package:peersglobaladmin/pages/forgetpasswordscreen.dart';
 import 'package:peersglobaladmin/pages/manageexhibiter.dart';
@@ -50,6 +51,8 @@ class AppRout{
       GoRoute(path: '/speaker',
         builder: (context, state) => Speaker(),),
 
+      GoRoute(path: '/annoucement',
+        builder: (context, state) => Announcement(),),
 
 
     ]);
